@@ -20,20 +20,34 @@ def generate_nutrition(image_bytes):
     generate_content_config = types.GenerateContentConfig(
         response_mime_type="application/json",
         response_schema=genai.types.Schema(
-            type=genai.types.Type.OBJECT,
-            required=["dish", "weight", "calories_per_100g", "calories_per_total"],
-            properties={
-                "dish": genai.types.Schema(
-                    type=genai.types.Type.STRING,
-                ),
-                "weight": genai.types.Schema(
-                    type=genai.types.Type.INTEGER,
-                ),
-                "calories_per_100g": genai.types.Schema(
-                    type=genai.types.Type.INTEGER,
-                ),
-                "calories_per_total": genai.types.Schema(
-                    type=genai.types.Type.INTEGER,
+            type = genai.types.Type.OBJECT,
+            required = ["dishes"],
+            properties = {
+                "dishes": genai.types.Schema(
+                    type = genai.types.Type.ARRAY,
+                    description = "An array of dishes with their nutritional information.",
+                    items = genai.types.Schema(
+                        type = genai.types.Type.OBJECT,
+                        required = ["dish", "weight", "calories_per_100g", "calories_per_total"],
+                        properties = {
+                            "dish": genai.types.Schema(
+                                type = genai.types.Type.STRING,
+                                description = "Name of the dish",
+                            ),
+                            "weight": genai.types.Schema(
+                                type = genai.types.Type.INTEGER,
+                                description = "Weight of the dish in grams",
+                            ),
+                            "calories_per_100g": genai.types.Schema(
+                                type = genai.types.Type.INTEGER,
+                                description = "Calories per 100 grams of the dish",
+                            ),
+                            "calories_per_total": genai.types.Schema(
+                                type = genai.types.Type.INTEGER,
+                                description = "Total calories in the dish",
+                            ),
+                        },
+                    ),
                 ),
             },
         ),
@@ -55,5 +69,5 @@ def generate_nutrition(image_bytes):
         contents=contents,
         config=generate_content_config,
     )
-
+    print(response.text)
     return response.text
