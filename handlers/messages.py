@@ -1,4 +1,5 @@
 import io
+import json
 
 from aiogram import F, Router, Bot
 from aiogram.types import Message, BufferedInputFile
@@ -28,7 +29,13 @@ async def handle_image(message: Message, state: FSMContext, bot: Bot):
 
     await state.clear()
     await message.delete()
-    response = generate_nutrition(file_bytes)
+
+    response = json.loads(generate_nutrition(file_bytes))
+    dish_data = [(dish['dish'], dish['weight'], dish['calories_per_100g'], dish['calories_per_total']) for dish in response['dishes']]
+    output = ''
+    for dish_name, dish_weight, dish_calories_per_100g, dish_total_calories in dish_data:
+        output += f"Название блюда: {dish_name}\nВес: {dish_weight}г\nКалории (100г): {dish_calories_per_100g}ккал\nКалории ({dish_weight}г) :{dish_total_calories}ккал\n\n"
+
     if original_message_id:
         await bot.delete_message(chat_id=message.chat.id, message_id=original_message_id)
     else:
