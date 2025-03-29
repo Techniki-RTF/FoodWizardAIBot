@@ -4,7 +4,7 @@ from aiogram import F, Router, Bot
 from aiogram.types import Message, BufferedInputFile
 from aiogram.fsm.context import FSMContext
 
-from keyboards.inline_keyboard import back_home_kb
+from handlers.commands import cmd_start
 from states import UserStates
 from utils.nutrition_gemini import generate_nutrition
 
@@ -33,4 +33,5 @@ async def handle_image(message: Message, state: FSMContext, bot: Bot):
         await bot.delete_message(chat_id=message.chat.id, message_id=original_message_id)
     else:
         pass
-    await message.answer_photo(photo=input_file, caption=f'{response}', reply_markup=back_home_kb())
+    await message.answer_photo(photo=input_file, caption=f'{output}')
+    await cmd_start(message)
