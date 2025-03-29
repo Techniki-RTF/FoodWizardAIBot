@@ -21,6 +21,7 @@ async def back_home(callback: CallbackQuery, state: FSMContext):
 
 @start_cmd_router.callback_query(F.data == 'send_image')
 async def send_image(callback: CallbackQuery, state: FSMContext):
+    await state.update_data(original_message_id=callback.message.message_id)
     await state.set_state(UserStates.waiting_for_image)
     await callback.message.edit_text('Отправьте изображение', reply_markup=back_home_kb())
 

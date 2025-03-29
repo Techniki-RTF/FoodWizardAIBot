@@ -22,4 +22,8 @@ async def handle_image(message: Message, state: FSMContext, bot: Bot):
 
     await state.clear()
 
-    await message.reply(f'{file_name}', reply_markup=back_home_kb())
+    if original_message_id:
+        await bot.delete_message(chat_id=message.chat.id, message_id=original_message_id)
+    else:
+        pass
+    await message.answer_photo(photo=input_file, caption=f'{file_name}', reply_markup=back_home_kb())
