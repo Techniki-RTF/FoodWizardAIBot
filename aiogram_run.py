@@ -2,8 +2,10 @@ import asyncio
 from create_bot import bot, dp, logger
 from handlers.commands import start_cmd_router
 from handlers.messages import start_msg_router
+from db_handler import database
 
 async def main():
+    await database.init_db()
     dp.include_router(start_cmd_router)
     dp.include_router(start_msg_router)
     await bot.delete_webhook(drop_pending_updates=True)
