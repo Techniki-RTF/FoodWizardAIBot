@@ -1,8 +1,8 @@
 def goal_converter(goal):
     match goal:
-        case 'lose_weight': return "похудение"
-        case 'maintain_weight': return "поддержание веса"
-        case 'gain_mass': return "набор массы"
+        case 'lose_weight': return "Похудение"
+        case 'maintain_weight': return "Поддержание веса"
+        case 'gain_mass': return "Набор массы"
         case _: return None
 
 def user_sex_converter(sex):
