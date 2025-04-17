@@ -5,7 +5,7 @@ def goal_converter(goal):
         case 'gain_mass': return "набор массы"
         case _: return None
 
-def sex_converter(sex):
+def user_sex_converter(sex):
     match sex:
         case 'male': return 'Мужской'
         case 'female': return 'Женский'
