@@ -17,3 +17,17 @@ def params_converter(param):
         case 'c_weight': return "54.2 (кг)"
         case 'c_age': return "19 (лет)"
         case _: return None
+
+def param_input_converter(user_input, param):
+    if not match(r'^[+]?[0-9]*\.?[0-9]+$', user_input):
+        return False
+    user_input = float(user_input)
+    match param:
+        case 'c_weight':
+            if not 30 <= user_input <= 150: return False
+        case 'c_height':
+            if not 100 <= user_input <= 250: return False
+        case 'c_age':
+            user_input = int(user_input)
+            if not 14 <= user_input <= 120: return False
+    return user_input
