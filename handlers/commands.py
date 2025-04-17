@@ -4,13 +4,14 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from states import UserStates
 from keyboards.inline_keyboard import *
-from utils.converters import *
+from db_handler.database import *
 
 start_cmd_router = Router()
 
 @start_cmd_router.message(CommandStart())
 async def cmd_start(message: Message):
-    await message.answer('Привет! Меню:', reply_markup=main_menu_kb())
+    await create_user(message.from_user.id)
+    await message.answer(f'Привет, {message.from_user.full_name}!\nМеню:', reply_markup=main_menu_kb())
 
 @start_cmd_router.callback_query(F.data == 'back_home')
 async def back_home(callback: CallbackQuery, state: FSMContext):
@@ -35,9 +36,11 @@ async def about(callback: CallbackQuery):
 
 @start_cmd_router.callback_query(F.data == 'profile')
 async def profile(callback: CallbackQuery):
+    c_profile = await get_profile(callback.from_user.id)
     await callback.message.edit_text(
-        f"Ваша цель: {None}\n"
-        f"Ваши текущие параметры: {None} см / {None} кг / {None} лет\n",
+        f"Ваша цель: {c_profile['goal']}\n"
+        f"Ваш пол: {c_profile['sex']}\n"
+        f"Ваши текущие параметры: {c_profile['height']} см / {c_profile['weight']} кг / {c_profile['age']} лет\n",
         reply_markup=profile_kb())
 
 @start_cmd_router.callback_query(F.data == 'goal')
@@ -45,6 +48,19 @@ async def goal(callback: CallbackQuery):
     await callback.message.edit_text(
         f"Выберете цель:",
         reply_markup=goal_kb())
+
+@start_cmd_router.callback_query(F.data == 'sex')
+async def goal(callback: CallbackQuery):
+    await callback.message.edit_text(
+        f"Выберете пол:",
+        reply_markup=user_sex_kb())
+
+@start_cmd_router.callback_query(F.data.in_({'male', 'female'}))
+async def c_goal(callback: CallbackQuery):
+    await change_user_sex(callback.from_user.id, callback.data)
+    await callback.message.edit_text(
+        f"Вы выбрали {user_sex_converter(callback.data)} пол",
+        reply_markup=back_home_kb())
 
 @start_cmd_router.callback_query(F.data == 'params')
 async def params(callback: CallbackQuery):
@@ -54,12 +70,16 @@ async def params(callback: CallbackQuery):
 
 @start_cmd_router.callback_query(F.data.in_({'lose_weight', 'maintain_weight', 'gain_mass'}))
 async def c_goal(callback: CallbackQuery):
+    await change_goal(callback.from_user.id, callback.data)
     await callback.message.edit_text(
         f"Вы выбрали {goal_converter(callback.data)} в качестве цели",
         reply_markup=back_home_kb())
 
 @start_cmd_router.callback_query(F.data.in_({'c_height', 'c_weight', 'c_age'}))
-async def c_param(callback: CallbackQuery):
+async def c_param(callback: CallbackQuery, state: FSMContext):
+    await state.update_data(original_message_id=callback.message.message_id)
+    await state.set_state(UserStates.waiting_for_param)
+    await state.update_data(param=callback.data)
     await callback.message.edit_text(
         f"Отправьте значение параметра в формате {params_converter(callback.data)}",
         reply_markup=back_home_kb()

@@ -1,3 +1,5 @@
+from re import match
+
 def goal_converter(goal):
     match goal:
         case 'lose_weight': return "Похудение"

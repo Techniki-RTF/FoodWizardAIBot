@@ -1,6 +1,7 @@
-from aiosqlite import connect
+from aiosqlite import connect, Connection
+from utils.converters import *
 
-db = None
+db: Connection | None = None
 
 async def init_db():
     global db
@@ -23,3 +24,36 @@ def get_db() -> Connection:
     if db is None:
         raise RuntimeError('Database connection failed.')
     return db
+
+async def create_user(uid):
+    c_db = get_db()
+    await c_db.execute('''
+            INSERT OR IGNORE INTO users (user_id)
+            VALUES (?)
+            ''', (uid,))
+    await c_db.commit()
+
+async def change_goal(uid, goal):
+    c_db = get_db()
+    await c_db.execute('UPDATE users SET goal = ? WHERE user_id = ?', (goal, uid))
+    await c_db.commit()
+
+async def change_user_sex(uid, sex):
+    c_db = get_db()
+    await c_db.execute('UPDATE users SET sex = ? WHERE user_id = ?', (sex, uid))
+    await c_db.commit()
+
+async def get_profile(uid):
+    c_db = get_db()
+    cursor = await c_db.execute('SELECT height, weight, age, sex, goal FROM users WHERE user_id = ?', (uid,))
+    row = await cursor.fetchone()
+    if row:
+        height, weight, age, sex, goal = row
+    else:
+        height = weight = age = sex = goal = None
+    return {'height': height, 'weight': weight, 'age': int(age), 'sex': user_sex_converter(sex), 'goal': goal_converter(goal)}
+
+async def change_param(uid, param, value):
+    c_db = get_db()
+    await c_db.execute(f'UPDATE users SET {param.replace('c_', '', 1)} = ? WHERE user_id = ?', (value, uid))
+    await c_db.commit()
