@@ -11,6 +11,7 @@ async def init_db():
         height REAL DEFAULT NULL,
         weight REAL DEFAULT NULL,
         age REAL DEFAULT NULL,
+        sex REAL DEFAULT NULL,
         goal REAL DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )

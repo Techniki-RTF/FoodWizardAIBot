@@ -5,6 +5,12 @@ def goal_converter(goal):
         case 'gain_mass': return "набор массы"
         case _: return None
 
+def sex_converter(sex):
+    match sex:
+        case 'male': return 'Мужской'
+        case 'female': return 'Женский'
+        case _: return None
+
 def params_converter(param):
     match param:
         case 'c_height': return "181.5 (см)"
