@@ -18,5 +18,7 @@ async def init_db():
     await db.commit()
     return db
 
-def get_db():
-       return db
+def get_db() -> Connection:
+    if db is None:
+        raise RuntimeError('Database connection failed.')
+    return db
