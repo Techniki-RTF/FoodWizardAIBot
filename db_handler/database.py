@@ -10,7 +10,7 @@ async def init_db():
         user_id INTEGER PRIMARY KEY AUTOINCREMENT,
         height REAL DEFAULT NULL,
         weight REAL DEFAULT NULL,
-        age REAL DEFAULT NULL,
+        age INTEGER DEFAULT NULL,
         sex REAL DEFAULT NULL,
         goal REAL DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

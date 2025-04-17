@@ -19,6 +19,7 @@ def back_home_kb():
 def profile_kb():
     inline_kb_list = [
         [InlineKeyboardButton(text="Изменить цель похудения", callback_data='goal')],
+        [InlineKeyboardButton(text="Изменить пол", callback_data='sex')],
         [InlineKeyboardButton(text="Изменить личные параметры", callback_data='params')],
         [InlineKeyboardButton(text="На главную", callback_data='back_home')]
     ]
