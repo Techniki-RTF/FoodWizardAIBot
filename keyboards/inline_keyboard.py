@@ -15,10 +15,10 @@ def back_home_kb():
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
-
 def profile_kb():
     inline_kb_list = [
         [InlineKeyboardButton(text="Изменить цель похудения", callback_data='goal')],
+        [InlineKeyboardButton(text="Изменить пол", callback_data='sex')],
         [InlineKeyboardButton(text="Изменить личные параметры", callback_data='params')],
         [InlineKeyboardButton(text="На главную", callback_data='back_home')]
     ]
@@ -28,7 +28,16 @@ def goal_kb():
     inline_kb_list = [
         [InlineKeyboardButton(text="Похудение", callback_data='lose_weight')],
         [InlineKeyboardButton(text="Поддержание веса", callback_data='maintain_weight')],
-        [InlineKeyboardButton(text="Набор массы", callback_data='gain_mass')]
+        [InlineKeyboardButton(text="Набор массы", callback_data='gain_mass')],
+        [InlineKeyboardButton(text="На главную", callback_data='back_home')]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
+
+def user_sex_kb():
+    inline_kb_list = [
+        [InlineKeyboardButton(text="Мужской", callback_data='male')],
+        [InlineKeyboardButton(text="Женский", callback_data='female')],
+        [InlineKeyboardButton(text="На главную", callback_data='back_home')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 

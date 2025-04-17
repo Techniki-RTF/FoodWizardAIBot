@@ -1,7 +1,6 @@
 /.idea
 /.venv/
-/db_handler/
 /images/
-/middlewares/
 .env
+database.db
 
