@@ -8,6 +8,19 @@ def main_menu_kb():
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
+def image_response_kb():
+    inline_kb_list = [
+        [InlineKeyboardButton(text="Отправить новое изображение", callback_data='send_image')],
+        [InlineKeyboardButton(text="Главное меню", callback_data='home')]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
+
+def no_response_kb():
+    inline_kb_list = [
+        [InlineKeyboardButton(text="Отправить новое изображение", callback_data='send_image')],
+        [InlineKeyboardButton(text="Главное меню", callback_data='back_home')]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 def back_home_kb():
     inline_kb_list = [

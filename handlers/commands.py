@@ -13,19 +13,27 @@ async def cmd_start(message: Message):
     await create_user(message.from_user.id)
     await message.answer(f'Привет, {message.from_user.full_name}!\nМеню:', reply_markup=main_menu_kb())
 
+@start_cmd_router.callback_query(F.data == 'home')
+async def home(callback: CallbackQuery):
+    await callback.message.answer(f'Привет, {callback.from_user.full_name}!\nМеню:', reply_markup=main_menu_kb())
+
 @start_cmd_router.callback_query(F.data == 'back_home')
 async def back_home(callback: CallbackQuery, state: FSMContext):
     current_state = await state.get_state()
     if current_state:
         await state.clear()
-    await callback.answer('На главную')
-    await callback.message.edit_text('Привет! Меню:', reply_markup=main_menu_kb())
+    await callback.message.edit_text(f'Привет, {callback.from_user.full_name}!\nМеню:', reply_markup=main_menu_kb())
 
 @start_cmd_router.callback_query(F.data == 'send_image')
 async def send_image(callback: CallbackQuery, state: FSMContext):
-    await state.update_data(original_message_id=callback.message.message_id)
+    await callback.answer()
     await state.set_state(UserStates.waiting_for_image)
-    await callback.message.edit_text('Отправьте изображение', reply_markup=back_home_kb())
+    if callback.message.photo:
+        answer = await callback.message.answer(text='Отправьте изображение', reply_markup=back_home_kb())
+        await state.update_data(original_message_id=answer.message_id)
+    else:
+        await state.update_data(original_message_id=callback.message.message_id)
+        await callback.message.edit_text('Отправьте изображение', reply_markup=back_home_kb())
 
 @start_cmd_router.callback_query(F.data == 'about')
 async def about(callback: CallbackQuery):
