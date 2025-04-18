@@ -3,6 +3,7 @@ import json
 from decouple import config
 from google import genai
 from google.genai import types
+from google.genai.errors import APIError
 
 
 def generate_nutrition(image_bytes):
@@ -66,10 +67,13 @@ def generate_nutrition(image_bytes):
             """),
         ],
     )
-
-    response = json.loads(client.models.generate_content(
-        model=model,
-        contents=contents,
-        config=generate_content_config).text)
-    if len(response['dishes']) == 0: return False
-    return response
+    try:
+        response = json.loads(client.models.generate_content(
+            model=model,
+            contents=contents,
+            config=generate_content_config).text)
+        if len(response['dishes']) == 0: return False
+        return response
+    except APIError as e:
+        print(e)
+        return 'api_error'
