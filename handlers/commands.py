@@ -1,4 +1,4 @@
-from aiogram import Router, F
+from aiogram import Router, F, Bot
 from aiogram.filters import CommandStart
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
@@ -8,14 +8,27 @@ from db_handler.database import *
 
 start_cmd_router = Router()
 
+async def delete_menu_message(message, current_state, bot):
+    data = await current_state.get_data()
+    menu_message_id = data.get('menu_message_id')
+    if menu_message_id:
+        await bot.delete_message(message.chat.id, menu_message_id)
+
 @start_cmd_router.message(CommandStart())
-async def cmd_start(message: Message):
+async def cmd_start(message: Message, state: FSMContext, bot: Bot):
+    await delete_menu_message(message, state, bot)
+    await message.delete()
     await create_user(message.from_user.id)
-    await message.answer(f'Привет, {message.from_user.full_name}!\nМеню:', reply_markup=main_menu_kb())
+    answer = await message.answer(f'Привет, {message.from_user.full_name}!\nМеню:', reply_markup=main_menu_kb())
+    await state.update_data(menu_message_id=answer.message_id)
 
 @start_cmd_router.callback_query(F.data == 'home')
-async def home(callback: CallbackQuery):
-    await callback.message.answer(f'Привет, {callback.from_user.full_name}!\nМеню:', reply_markup=main_menu_kb())
+async def home(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    await delete_menu_message(callback.message, state, bot)
+    await callback.answer()
+    answer = await callback.message.answer(f'Привет, {callback.from_user.full_name}!\nМеню:', reply_markup=main_menu_kb())
+    await state.update_data(menu_message_id=answer.message_id)
+
 
 @start_cmd_router.callback_query(F.data == 'back_home')
 async def back_home(callback: CallbackQuery, state: FSMContext):
