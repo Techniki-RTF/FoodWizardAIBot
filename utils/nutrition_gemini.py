@@ -1,3 +1,5 @@
+import json
+
 from decouple import config
 from google import genai
 from google.genai import types
@@ -65,10 +67,9 @@ def generate_nutrition(image_bytes):
         ],
     )
 
-    response =  client.models.generate_content(
+    response = json.loads(client.models.generate_content(
         model=model,
         contents=contents,
-        config=generate_content_config,
-    )
-    print(response.text)
-    return response.text
+        config=generate_content_config).text)
+    if len(response['dishes']) == 0: return False
+    return response
