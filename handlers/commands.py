@@ -82,5 +82,5 @@ async def c_param(callback: CallbackQuery, state: FSMContext):
     await state.update_data(param=callback.data)
     await callback.message.edit_text(
         f"Отправьте значение параметра в формате {params_converter(callback.data)}",
-        reply_markup=back_home_kb()
+        reply_markup=back_params_kb()
     )
