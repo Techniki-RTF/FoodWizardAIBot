@@ -49,9 +49,10 @@ async def get_profile(uid):
     row = await cursor.fetchone()
     if row:
         height, weight, age, sex, goal = row
+        if age: age = int(age)
     else:
         height = weight = age = sex = goal = None
-    return {'height': height, 'weight': weight, 'age': int(age), 'sex': user_sex_converter(sex), 'goal': goal_converter(goal)}
+    return {'height': height, 'weight': weight, 'age': age, 'sex': user_sex_converter(sex), 'goal': goal_converter(goal)}
 
 async def change_param(uid, param, value):
     c_db = get_db()
