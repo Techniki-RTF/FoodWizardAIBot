@@ -64,11 +64,10 @@ async def handle_param(message: Message, state: FSMContext, bot: Bot):
     original_message_id = state_data.get('original_message_id')
     param = state_data.get('param')
     output = param_input_converter(message.text, param)
-    await delete_original_message(original_message_id, bot, message)
-    await message.delete()
     if not output:
-        await message.answer(text='Неверный формат ввода данных', reply_markup=back_home_kb())
+        await bot.edit_message_text(text=f'Неверный формат ввода данных ({message.text})', reply_markup=back_home_kb(), message_id=original_message_id, chat_id=message.chat.id)
     else:
         await change_param(message.from_user.id, param, output)
-        await message.answer(text='Параметр успешно установлен!', reply_markup=back_home_kb())
+        await bot.edit_message_text(text='Параметр успешно установлен!', reply_markup=back_home_kb(), message_id=original_message_id, chat_id=message.chat.id)
+    await message.delete()
     await state.clear()
