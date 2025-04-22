@@ -1,11 +1,15 @@
+import os
 from aiosqlite import connect, Connection
 from utils.converters import *
 
 db: Connection | None = None
 
+DB_DIR = "/database"
+os.makedirs(DB_DIR, exist_ok=True)
+
 async def init_db():
     global db
-    db = await connect('database.db')
+    db = await connect(os.path.join(DB_DIR, 'database.db'))
     await db.execute('''
     CREATE TABLE IF NOT EXISTS users (
         user_id INTEGER PRIMARY KEY AUTOINCREMENT,
