@@ -1,4 +1,5 @@
 from aiogram import Router, F, Bot
+from aiogram.exceptions import *
 from aiogram.filters import CommandStart
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
@@ -12,7 +13,10 @@ async def delete_menu_message(message, current_state, bot):
     data = await current_state.get_data()
     menu_message_id = data.get('menu_message_id')
     if menu_message_id:
-        await bot.delete_message(message.chat.id, menu_message_id)
+        try:
+            await bot.delete_message(message.chat.id, menu_message_id)
+        except TelegramBadRequest:
+            pass
 
 @start_cmd_router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext, bot: Bot):
