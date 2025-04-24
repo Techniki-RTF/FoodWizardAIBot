@@ -57,7 +57,9 @@ async def get_profile(uid):
         if age: age = int(age)
     else:
         height = weight = age = sex = goal = None
-    return {'height': height, 'weight': weight, 'age': age, 'sex': user_sex_converter(sex), 'goal': goal_converter(goal)}
+    profile = {'height': height, 'weight': weight, 'age': age, 'sex': user_sex_converter(sex), 'goal': goal_converter(goal)}
+    profile = {k: (param if param is not None else "нет данных") for k, param in profile.items()}
+    return profile
 
 async def change_param(uid, param, value):
     c_db = get_db()
