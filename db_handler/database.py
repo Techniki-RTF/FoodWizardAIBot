@@ -1,6 +1,5 @@
 import os
 from aiosqlite import connect, Connection
-from utils.converters import *
 
 db: Connection | None = None
 
@@ -57,8 +56,7 @@ async def get_profile(uid):
         if age: age = int(age)
     else:
         height = weight = age = sex = goal = None
-    profile = {'height': height, 'weight': weight, 'age': age, 'sex': user_sex_converter(sex), 'goal': goal_converter(goal)}
-    profile = {k: (param if param is not None else "нет данных") for k, param in profile.items()}
+    profile = {'height': height, 'weight': weight, 'age': age, 'sex': sex, 'goal': goal}
     return profile
 
 async def change_param(uid, param, value):

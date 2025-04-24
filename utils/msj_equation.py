@@ -1,3 +1,5 @@
+from utils.converters import goal_converter
+
 activity_multipliers = {"0": 1.2, "1": 1.375, "2": 1.55, "3": 1.725, "4": 1.9}
 
 
@@ -8,8 +10,8 @@ def msj_equation(c_profile, activity):
     if None in (weight, height, age, sex):
         return 'Недостаточно данных.\nЗаполните профиль, пожалуйста.'
     match sex:
-        case 'Мужской': x = 5
-        case 'Женский': x = -161
+        case 'male': x = 5
+        case 'female': x = -161
     bmr = int((10 * weight + 6.25 * height - 5 * age + x) * activity_multipliers[activity])
     return f'Ваша суточная норма калорий: {bmr} ккал{goal_multiplier(bmr, goal)}'
 
@@ -18,4 +20,4 @@ def goal_multiplier(bmr, goal):
         case "weight_loss": bmr *= 0.85
         case "mass_gain": bmr *= 1.15
         case _: return ''
-    return f'\nС учётом вашей цели ({goal}): {int(bmr)} ккал'
+    return f'\nС учётом вашей цели ({goal_converter(goal)}): {int(bmr)} ккал'

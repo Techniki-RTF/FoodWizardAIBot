@@ -6,7 +6,8 @@ from aiogram.fsm.context import FSMContext
 from states import UserStates
 from keyboards.inline_keyboard import *
 from db_handler.database import *
-from utils.msj_equation import *
+from utils.converters import user_sex_converter, params_converter, goal_converter
+from utils.msj_equation import msj_equation
 
 start_cmd_router = Router()
 
@@ -62,10 +63,11 @@ async def about(callback: CallbackQuery):
 
 @start_cmd_router.callback_query(F.data == 'profile')
 async def profile(callback: CallbackQuery):
-    c_profile = await get_profile(callback.from_user.id)
+    c_profile = (await get_profile(callback.from_user.id))
+    c_profile = {k: 'нет данных' if v in ('', None) else v for k, v in c_profile.items()}
     await callback.message.edit_text(
-        f"Ваша цель: {c_profile['goal']}\n"
-        f"Ваш пол: {c_profile['sex']}\n"
+        f"Ваша цель: {goal_converter(c_profile['goal'])}\n"
+        f"Ваш пол: {user_sex_converter(c_profile['sex'])}\n"
         f"Ваши текущие параметры: {c_profile['height']} см / {c_profile['weight']} кг / {c_profile['age']} лет\n",
         reply_markup=profile_kb())
 
