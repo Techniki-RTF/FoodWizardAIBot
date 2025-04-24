@@ -4,7 +4,8 @@ from utils.converters import *
 
 db: Connection | None = None
 
-DB_DIR = "/database"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_DIR = os.path.join(BASE_DIR, "../database")
 os.makedirs(DB_DIR, exist_ok=True)
 
 async def init_db():
