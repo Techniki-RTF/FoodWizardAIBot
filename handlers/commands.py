@@ -6,6 +6,7 @@ from aiogram.fsm.context import FSMContext
 from states import UserStates
 from keyboards.inline_keyboard import *
 from db_handler.database import *
+from utils.msj_equation import *
 
 start_cmd_router = Router()
 
