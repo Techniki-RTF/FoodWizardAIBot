@@ -67,3 +67,18 @@ def params_kb():
 def back_params_kb():
     inline_kb_list = [[InlineKeyboardButton(text="Назад", callback_data='params')]]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
+
+def daily_kcal_kb():
+    inline_kb_list = [
+        [InlineKeyboardButton(text="Отсутствие активности", callback_data="activity_0")],
+        [InlineKeyboardButton(text="Легкая (физ. нагрузки 1-3 раза в неделю)", callback_data="activity_1")],
+        [InlineKeyboardButton(text="Средняя (физ. нагрузки 3-5 раз в неделю)", callback_data="activity_2")],
+        [InlineKeyboardButton(text="Высокая (физ. нагрузки 6-7 раз в неделю)", callback_data="activity_3")],
+        [InlineKeyboardButton(text="Очень высокая (постоянная физ. нагрузка)", callback_data="activity_4")],
+        [InlineKeyboardButton(text="На главную", callback_data='back_home')]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
+
+def back_activity_kb():
+    inline_kb_list = [[InlineKeyboardButton(text="Назад", callback_data='daily_kcal')]]
+    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)

@@ -109,3 +109,12 @@ async def c_param(callback: CallbackQuery, state: FSMContext):
         f"Отправьте значение параметра в формате {params_converter(callback.data)}",
         reply_markup=back_params_kb()
     )
+
+@start_cmd_router.callback_query(F.data == 'daily_kcal')
+async def daily_kcal(callback: CallbackQuery):
+    await callback.message.edit_text('Выберете ваш уровень активности:', reply_markup=daily_kcal_kb())
+
+@start_cmd_router.callback_query(F.data.regexp(r'activity_[0-4]$'))
+async def daily_kcal_activity(callback: CallbackQuery):
+    c_profile = await get_profile(callback.from_user.id)
+    await callback.message.edit_text(f'{msj_equation(c_profile, callback.data[-1])}', reply_markup=back_home_kb())
