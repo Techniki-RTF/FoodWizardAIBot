@@ -4,6 +4,7 @@ def main_menu_kb():
     inline_kb_list = [
         [InlineKeyboardButton(text="Отправить изображение", callback_data='send_image')],
         [InlineKeyboardButton(text="Профиль", callback_data='profile')],
+        [InlineKeyboardButton(text="Рассчитать суточную норму калорий", callback_data='daily_kcal')],
         [InlineKeyboardButton(text="О боте", callback_data='about')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
