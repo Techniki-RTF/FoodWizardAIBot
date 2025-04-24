@@ -3,8 +3,7 @@ from aiosqlite import connect, Connection
 
 db: Connection | None = None
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_DIR = os.path.join(BASE_DIR, "../database")
+DB_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../database"))
 os.makedirs(DB_DIR, exist_ok=True)
 
 async def init_db():
