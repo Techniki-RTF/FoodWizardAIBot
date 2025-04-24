@@ -42,7 +42,7 @@ def goal_kb():
     inline_kb_list = [
         [InlineKeyboardButton(text="Похудение", callback_data='lose_weight')],
         [InlineKeyboardButton(text="Поддержание веса", callback_data='maintain_weight')],
-        [InlineKeyboardButton(text="Набор массы", callback_data='gain_mass')],
+        [InlineKeyboardButton(text="Набор массы", callback_data='mass_gain')],
         [InlineKeyboardButton(text="Назад", callback_data='profile')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)

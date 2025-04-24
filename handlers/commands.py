@@ -94,7 +94,7 @@ async def params(callback: CallbackQuery):
         f"Выберете параметр для изменения его значения",
         reply_markup=params_kb())
 
-@start_cmd_router.callback_query(F.data.in_({'lose_weight', 'maintain_weight', 'gain_mass'}))
+@start_cmd_router.callback_query(F.data.in_({'lose_weight', 'maintain_weight', 'mass_gain'}))
 async def c_goal(callback: CallbackQuery):
     await change_goal(callback.from_user.id, callback.data)
     await callback.message.edit_text(
