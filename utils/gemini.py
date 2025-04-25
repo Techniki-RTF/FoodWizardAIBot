@@ -32,10 +32,16 @@ async def get_final_output(gemini_output, nutrition_info, image_bytes):
     contents = [types.Content(role="user", parts=[types.Part.from_text(text="Второй этап"), types.Part.from_text(text=gemini_output), types.Part.from_bytes(data=image_bytes, mime_type="image/png"), types.Part.from_text(text=nutrition_info)])]
     generate_content_config = types.GenerateContentConfig(response_mime_type="application/json", response_schema=RESPONSE_SCHEMA_FOR_FINAL)
     try:
-        response = json.loads(client.models.generate_content(
+        response = client.models.generate_content(
             model=model,
             contents=contents,
-            config=generate_content_config).text)
+            config=generate_content_config).text
+        print(response)
+        try:
+            response = json.loads(response)
+        except json.JSONDecodeError as e:
+            print(e)
+            return 'api_error'
         if len(response['dishes']) == 0: return False
         return response
     except APIError as e:
