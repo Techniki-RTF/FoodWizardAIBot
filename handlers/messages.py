@@ -7,7 +7,7 @@ from aiogram.fsm.context import FSMContext
 from keyboards.inline_keyboard import back_home_kb, image_response_kb, no_response_kb
 from states import UserStates
 from utils.converters import param_input_converter
-from utils.nutrition_gemini import generate_nutrition
+from utils.nutrition import get_output
 from db_handler.database import change_param
 
 start_msg_router = Router()
@@ -44,14 +44,14 @@ async def handle_image(message: Message, state: FSMContext, bot: Bot):
 
     answer = await message.answer(text='Распознавание в процессе...')
     await bot.send_chat_action(message.chat.id, 'upload_photo')
-    response = generate_nutrition(file_bytes)
+    response = await get_output(file_bytes)
     match response:
         case False:
             await answer.edit_text('Не удалось распознать еду на фото, попробуйте другое изображение', reply_markup=no_response_kb())
         case 'api_error':
              await answer.edit_text('Произошла непредвиденная ошибка, попробуйте ещё раз', reply_markup=no_response_kb())
         case _:
-            dish_data = [(dish['dish'], dish['weight'], dish['calories_per_100g'], dish['calories_per_total']) for dish in response['dishes']]
+            dish_data = [(dish['dish_ru'], dish['weight'], dish['calories_per_100g'], dish['calories_per_total']) for dish in response['dishes']]
             output = ''
             for dish_name, dish_weight, dish_calories_per_100g, dish_total_calories in dish_data:
                 output += f"Название блюда: {dish_name}\nВес: {dish_weight}г\nКалории (100г): {dish_calories_per_100g} ккал\nКалории ({dish_weight}г): {dish_total_calories} ккал\n\n"
