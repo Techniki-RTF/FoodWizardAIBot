@@ -17,6 +17,7 @@ async def init_db():
         age INTEGER DEFAULT NULL,
         sex REAL DEFAULT NULL,
         goal REAL DEFAULT NULL,
+        bmi REAL DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     ''')
@@ -48,17 +49,25 @@ async def change_user_sex(uid, sex):
 
 async def get_profile(uid):
     c_db = get_db()
-    cursor = await c_db.execute('SELECT height, weight, age, sex, goal FROM users WHERE user_id = ?', (uid,))
+    cursor = await c_db.execute('SELECT height, weight, age, sex, goal, bmi FROM users WHERE user_id = ?', (uid,))
     row = await cursor.fetchone()
     if row:
-        height, weight, age, sex, goal = row
+        height, weight, age, sex, goal, bmi = row
         if age: age = int(age)
     else:
-        height = weight = age = sex = goal = None
-    profile = {'height': height, 'weight': weight, 'age': age, 'sex': sex, 'goal': goal}
+        height = weight = age = sex = goal = bmi = None
+    profile = {'height': height, 'weight': weight, 'age': age, 'sex': sex, 'goal': goal, 'bmi': bmi}
     return profile
 
 async def change_param(uid, param, value):
     c_db = get_db()
     await c_db.execute(f'UPDATE users SET {param.replace('c_', '', 1)} = ? WHERE user_id = ?', (value, uid))
+    cursor = await c_db.execute('SELECT height, weight FROM users WHERE user_id = ?', (uid,))
+    row = await cursor.fetchone()
+    if row:
+        height, weight = row
+        if not(height and weight): pass
+        else:
+            bmi = "%.1f" % (weight / (height / 100) ** 2)
+            await c_db.execute(f'UPDATE users SET bmi = ? WHERE user_id = ?', (bmi, uid))
     await c_db.commit()

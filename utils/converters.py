@@ -33,3 +33,19 @@ def param_input_converter(user_input, param):
             user_input = int(user_input)
             if not 14 <= user_input <= 120: return False
     return user_input
+
+def bmi_converter(bmi):
+    match bmi:
+        case _ if 0 < bmi < 18.5: return f'{bmi} - Недостаточный вес'
+        case _ if 18.5 <= bmi < 24.9: return f'{bmi} -Нормальный вес'
+        case _ if 25 <= bmi < 29.9: return f'{bmi} - Избыточный вес'
+        case _ if bmi >= 30: return f'{bmi} - Ожирение'
+        case _: return 'нет данных'
+
+def bmi_to_goal_converter(bmi):
+    string = f'\nПри вашем ИМТ {bmi} рекомендуемая цель - '
+    match bmi:
+        case _ if 0 < bmi < 18.5: return string + 'Набор массы'
+        case _ if 18.5 <= bmi < 24.9: return string + 'Поддержание веса'
+        case _ if bmi >= 25 : return string + 'Похудение'
+        case _: return ''

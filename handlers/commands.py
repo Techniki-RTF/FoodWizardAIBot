@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 from states import UserStates
 from keyboards.inline_keyboard import *
 from db_handler.database import *
-from utils.converters import user_sex_converter, params_converter, goal_converter
+from utils.converters import user_sex_converter, params_converter, goal_converter, bmi_converter, bmi_to_goal_converter
 from utils.msj_equation import msj_equation
 
 start_cmd_router = Router()
@@ -68,14 +68,16 @@ async def profile(callback: CallbackQuery):
     await callback.message.edit_text(
         f"Ваша цель: {goal_converter(c_profile['goal'])}\n"
         f"Ваш пол: {user_sex_converter(c_profile['sex'])}\n"
-        f"Ваши текущие параметры: {c_profile['height']} см / {c_profile['weight']} кг / {c_profile['age']} лет\n",
+        f"Ваши текущие параметры: {c_profile['height']} см / {c_profile['weight']} кг / {c_profile['age']} лет\n"
+        f"Ваш индекс массы тела: {bmi_converter(c_profile['bmi']) if c_profile['bmi'] != 0 else 'нет данных'}",
         reply_markup=profile_kb())
 
 @start_cmd_router.callback_query(F.data == 'goal')
 async def goal(callback: CallbackQuery):
+    c_profile = (await get_profile(callback.from_user.id))
     await callback.message.edit_text(
-        f"Выберете цель:",
-        reply_markup=goal_kb())
+        f"Выберете цель:{bmi_to_goal_converter(c_profile['bmi'])}",
+        reply_markup=goal_kb(c_profile['bmi']))
 
 @start_cmd_router.callback_query(F.data == 'sex')
 async def goal(callback: CallbackQuery):

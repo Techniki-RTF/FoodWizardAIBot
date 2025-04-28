@@ -38,11 +38,11 @@ def profile_kb():
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
-def goal_kb():
+def goal_kb(bmi = None):
     inline_kb_list = [
-        [InlineKeyboardButton(text="Похудение", callback_data='lose_weight')],
-        [InlineKeyboardButton(text="Поддержание веса", callback_data='maintain_weight')],
-        [InlineKeyboardButton(text="Набор массы", callback_data='mass_gain')],
+        [InlineKeyboardButton(text=f"Похудение {"(Рекомендовано при вашем ИМТ)" if bmi >= 25 else ""}", callback_data='lose_weight')],
+        [InlineKeyboardButton(text=f"Поддержание веса {"(Рекомендовано при вашем ИМТ)" if 18.5 <= bmi < 24.9 else ""}", callback_data='maintain_weight')],
+        [InlineKeyboardButton(text=f"Набор массы {"(Рекомендовано при вашем ИМТ)" if 0 < bmi < 18.5 else ""}", callback_data='mass_gain')],
         [InlineKeyboardButton(text="Назад", callback_data='profile')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
