@@ -69,7 +69,7 @@ async def profile(callback: CallbackQuery):
         f"Ваша цель: {goal_converter(c_profile['goal'])}\n"
         f"Ваш пол: {user_sex_converter(c_profile['sex'])}\n"
         f"Ваши текущие параметры: {c_profile['height']} см / {c_profile['weight']} кг / {c_profile['age']} лет\n"
-        f"Ваш индекс массы тела: {bmi_converter(c_profile['bmi']) if c_profile['bmi'] != 0 else 'нет данных'}",
+        f"Ваш индекс массы тела: {bmi_converter(c_profile['bmi']) if type(c_profile['bmi']) in {float, int}  else 'нет данных'}",
         reply_markup=profile_kb())
 
 @start_cmd_router.callback_query(F.data == 'goal')
