@@ -7,22 +7,34 @@ DB_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../database"))
 os.makedirs(DB_DIR, exist_ok=True)
 
 async def init_db():
-    global db
-    db = await connect(os.path.join(DB_DIR, 'database.db'))
-    await db.execute('''
-    CREATE TABLE IF NOT EXISTS users (
-        user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        height REAL DEFAULT NULL,
-        weight REAL DEFAULT NULL,
-        age INTEGER DEFAULT NULL,
-        sex REAL DEFAULT NULL,
-        goal REAL DEFAULT NULL,
-        bmi REAL DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-    ''')
-    await db.commit()
-    return db
+        global db
+        db = await connect(os.path.join(DB_DIR, 'database.db'))
+
+        await db.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            user_id INTEGER PRIMARY KEY AUTOINCREMENT
+        )
+        ''')
+
+        columns = {
+            "height": "REAL DEFAULT NULL",
+            "weight": "REAL DEFAULT NULL",
+            "age": "INTEGER DEFAULT NULL",
+            "sex": "REAL DEFAULT NULL",
+            "goal": "REAL DEFAULT NULL",
+            "bmi": "REAL DEFAULT 0",
+            "created_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+        }
+
+        cursor = await db.execute("PRAGMA table_info(users)")
+        existing_columns = [row[1] async for row in cursor]
+
+        for col_name, col_type in columns.items():
+            if col_name not in existing_columns:
+                await db.execute(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}")
+
+        await db.commit()
+        return db
 
 def get_db() -> Connection:
     if db is None:
