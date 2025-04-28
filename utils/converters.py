@@ -37,7 +37,7 @@ def param_input_converter(user_input, param):
 def bmi_converter(bmi):
     match bmi:
         case _ if 0 < bmi < 18.5: return f'{bmi} - Недостаточный вес'
-        case _ if 18.5 <= bmi < 24.9: return f'{bmi} -Нормальный вес'
+        case _ if 18.5 <= bmi < 24.9: return f'{bmi} - Нормальный вес'
         case _ if 25 <= bmi < 29.9: return f'{bmi} - Избыточный вес'
         case _ if bmi >= 30: return f'{bmi} - Ожирение'
         case _: return 'нет данных'
