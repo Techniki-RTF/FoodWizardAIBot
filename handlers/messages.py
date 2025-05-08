@@ -11,12 +11,16 @@ from states import UserStates
 from utils.converters import param_input_converter
 from utils.nutrition import get_output
 from db_handler.database import change_param, get_db
+from aiogram.exceptions import TelegramBadRequest
 
 start_msg_router = Router()
 
 async def delete_original_message(original_message_id, bot, message):
     if original_message_id:
-        await bot.delete_message(chat_id=message.chat.id, message_id=original_message_id)
+        try:
+            await bot.delete_message(chat_id=message.chat.id, message_id=original_message_id)
+        except TelegramBadRequest:
+            pass
     else:
         pass
 
