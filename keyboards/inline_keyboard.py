@@ -5,6 +5,7 @@ def main_menu_kb():
         [InlineKeyboardButton(text="Отправить изображение", callback_data='send_image')],
         [InlineKeyboardButton(text="Профиль", callback_data='profile')],
         [InlineKeyboardButton(text="Рассчитать суточную норму калорий", callback_data='daily_kcal')],
+        [InlineKeyboardButton(text="Составить недельный рацион", callback_data='nutrition_plan')],
         [InlineKeyboardButton(text="О боте", callback_data='about')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
@@ -20,6 +21,12 @@ def no_response_kb():
     inline_kb_list = [
         [InlineKeyboardButton(text="Отправить новое изображение", callback_data='send_image')],
         [InlineKeyboardButton(text="Главное меню", callback_data='back_home')]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
+
+def plan_response_kb():
+    inline_kb_list = [
+        [InlineKeyboardButton(text="Главное меню", callback_data='home')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
@@ -68,17 +75,24 @@ def back_params_kb():
     inline_kb_list = [[InlineKeyboardButton(text="Назад", callback_data='params')]]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
-def daily_kcal_kb():
+def daily_kcal_kb(activity = None):
     inline_kb_list = [
-        [InlineKeyboardButton(text="Отсутствие активности", callback_data="activity_0")],
-        [InlineKeyboardButton(text="Легкая (физ. нагрузки 1-3 раза в неделю)", callback_data="activity_1")],
-        [InlineKeyboardButton(text="Средняя (физ. нагрузки 3-5 раз в неделю)", callback_data="activity_2")],
-        [InlineKeyboardButton(text="Высокая (физ. нагрузки 6-7 раз в неделю)", callback_data="activity_3")],
-        [InlineKeyboardButton(text="Очень высокая (постоянная физ. нагрузка)", callback_data="activity_4")],
-        [InlineKeyboardButton(text="На главную", callback_data='back_home')]
+    [InlineKeyboardButton(text=f"Отсутствие активности {"(выбрано)" if activity == 0 else ""}", callback_data="activity_0")],
+    [InlineKeyboardButton(text=f"Легкая (физ. нагрузки 1-3 раза в неделю) {"(выбрано)" if activity == 1 else ""}", callback_data="activity_1")],
+    [InlineKeyboardButton(text=f"Средняя (физ. нагрузки 3-5 раз в неделю) {"(выбрано)" if activity == 2 else ""}", callback_data="activity_2")],
+    [InlineKeyboardButton(text=f"Высокая (физ. нагрузки 6-7 раз в неделю) {"(выбрано)" if activity == 3 else ""}", callback_data="activity_3")],
+    [InlineKeyboardButton(text=f"Очень высокая (постоянная физ. нагрузка) {"(выбрано)" if activity == 4 else ""}", callback_data="activity_4")],
+        [InlineKeyboardButton(text=f"На главную", callback_data='back_home')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 def back_activity_kb():
     inline_kb_list = [[InlineKeyboardButton(text="Назад", callback_data='daily_kcal')]]
+    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
+
+def retry_plan_kb():
+    inline_kb_list = [
+        [InlineKeyboardButton(text="Попробовать снова", callback_data='nutrition_plan')],
+        [InlineKeyboardButton(text="На главную", callback_data='back_home')]
+    ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)

@@ -6,8 +6,9 @@ from aiogram.fsm.context import FSMContext
 from states import UserStates
 from keyboards.inline_keyboard import *
 from db_handler.database import *
-from utils.converters import user_sex_converter, params_converter, goal_converter, bmi_converter, bmi_to_goal_converter
+from utils.converters import *
 from utils.msj_equation import msj_equation
+from utils.gemini import generate_nutrition_plan
 
 start_cmd_router = Router()
 
@@ -69,7 +70,8 @@ async def profile(callback: CallbackQuery):
         f"Ваша цель: {goal_converter(c_profile['goal'])}\n"
         f"Ваш пол: {user_sex_converter(c_profile['sex'])}\n"
         f"Ваши текущие параметры: {c_profile['height']} см / {c_profile['weight']} кг / {c_profile['age']} лет\n"
-        f"Ваш индекс массы тела: {bmi_converter(c_profile['bmi']) if type(c_profile['bmi']) in {float, int}  else 'нет данных'}",
+        f"Ваш индекс массы тела: {bmi_converter(c_profile['bmi']) if type(c_profile['bmi']) in {float, int}  else 'нет данных'}\n"
+        f"Ваша дневная норма калорий с учётом вашей активности ({activity_converter(c_profile['activity'])}): {c_profile['daily_kcal']}",
         reply_markup=profile_kb())
 
 @start_cmd_router.callback_query(F.data == 'goal')
@@ -117,9 +119,26 @@ async def c_param(callback: CallbackQuery, state: FSMContext):
 
 @start_cmd_router.callback_query(F.data == 'daily_kcal')
 async def daily_kcal(callback: CallbackQuery):
-    await callback.message.edit_text('Выберете ваш уровень активности:', reply_markup=daily_kcal_kb())
+    c_profile = (await get_profile(callback.from_user.id))
+    await callback.message.edit_text('Выберете ваш уровень активности:', reply_markup=daily_kcal_kb(c_profile['activity']))
 
 @start_cmd_router.callback_query(F.data.regexp(r'activity_[0-4]$'))
 async def daily_kcal_activity(callback: CallbackQuery):
-    c_profile = await get_profile(callback.from_user.id)
-    await callback.message.edit_text(f'{msj_equation(c_profile, callback.data[-1])}', reply_markup=back_home_kb())
+    user_id = callback.from_user.id
+    c_profile = await get_profile(user_id)
+    await change_activity(user_id, int(callback.data[-1]))
+    msj = msj_equation(c_profile, callback.data[-1])
+    await change_daily_kcal(user_id, msj[1])
+    await callback.message.edit_text(f'{msj[0]}', reply_markup=back_home_kb())
+
+@start_cmd_router.callback_query(F.data == 'nutrition_plan')
+async def nutrition_plan(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    c_profile = (await get_profile(callback.from_user.id))
+    c_daily_kcal = c_profile['daily_kcal']
+    if not c_daily_kcal:
+        await callback.message.edit_text(text=f"Заполните профиль и рассчитайте вашу суточную норму калорий перед использованием этой функции", reply_markup=back_home_kb())
+        return
+    
+    await state.set_state(UserStates.waiting_for_diet_preferences)
+    await state.update_data(original_message_id=callback.message.message_id)
+    await callback.message.edit_text(text="Укажите особые предпочтения в вашем рационе, если они есть\nПримеры: десерты в приёмах пищи, вегетарианская диета, непереносимость цитрусовых\n\nЕсли у вас нет особых предпочтений, напишите \"Нет\"", reply_markup=back_home_kb())

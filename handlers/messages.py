@@ -6,11 +6,12 @@ from aiogram import F, Router, Bot
 from aiogram.types import Message, BufferedInputFile, MessageReactionUpdated
 from aiogram.fsm.context import FSMContext
 
-from keyboards.inline_keyboard import back_home_kb, image_response_kb, no_response_kb
+from keyboards.inline_keyboard import back_home_kb, image_response_kb, no_response_kb, plan_response_kb, retry_plan_kb
 from states import UserStates
-from utils.converters import param_input_converter
+from utils.converters import param_input_converter, goal_converter
+from utils.gemini import generate_nutrition_plan
 from utils.nutrition import get_output
-from db_handler.database import change_param, get_db
+from db_handler.database import change_param, get_db, get_profile
 from aiogram.exceptions import TelegramBadRequest
 
 start_msg_router = Router()
@@ -87,3 +88,92 @@ async def handle_reaction(message_reaction: MessageReactionUpdated, bot: Bot):
         rows = await cursor.fetchall()
         users_info = "\n\n".join([f"👤 ID: {row[0]}\n📏 Рост: {row[1] or 'не указан'} см\n⚖️ Вес: {row[2] or 'не указан'} кг\n🔢 Возраст: {row[3] or 'не указан'}\n👫 Пол: {row[4] or 'не указан'}\n🎯 Цель: {row[5] or 'не указана'}\n📈 ИМТ: {row[6] or 'не указан'}\n📅 Создан: {row[7]}\n" for row in rows])
         await bot.edit_message_text(text=f"📊 Данные пользователей ({datetime.now()}):\n\n{users_info}", message_id=message_reaction.message_id, chat_id=message_reaction.chat.id, reply_markup=back_home_kb())
+
+
+@start_msg_router.message(UserStates.waiting_for_diet_preferences)
+async def handle_diet_preferences(message: Message, state: FSMContext, bot: Bot):
+    preferences = message.text
+    user_id = message.from_user.id
+
+    state_data = await state.get_data()
+    original_message_id = state_data.get('original_message_id')
+
+    await message.delete()
+    
+    if len(preferences) > 100:
+        await bot.edit_message_text(
+            text="Слишком длинный текст. Пожалуйста, укажите предпочтения не более 100 символов.",
+            chat_id=message.chat.id,
+            message_id=original_message_id,
+            reply_markup=retry_plan_kb()
+        )
+        return
+
+    c_profile = (await get_profile(user_id))
+    await bot.edit_message_text(
+        text=f"План питания на {c_profile['daily_kcal']} ккал в день создаётся...",
+        chat_id=message.chat.id,
+        message_id=original_message_id
+    )
+
+    await bot.send_chat_action(message.chat.id, 'typing')
+
+    preferences_text = preferences if preferences.lower() != 'нет' else None
+    response = await generate_nutrition_plan(c_profile['daily_kcal'], goal_converter(c_profile['goal']), preferences_text)
+
+    await state.clear()
+
+    match response:
+        case 'api_error':
+            await bot.edit_message_text(
+                text='Произошла непредвиденная ошибка, попробуйте ещё раз',
+                chat_id=message.chat.id,
+                message_id=original_message_id,
+                reply_markup=back_home_kb()
+            )
+        case _:
+            days = response.get('days', [])
+            if not days:
+                await bot.edit_message_text(
+                    text='Не удалось составить план питания, попробуйте ещё раз',
+                    chat_id=message.chat.id,
+                    message_id=original_message_id,
+                    reply_markup=back_home_kb()
+                )
+                return
+
+            full_plan = f"🍽️ План питания на неделю ({c_profile['daily_kcal']} ккал/день)"
+            if preferences_text:
+                full_plan += f"\n📝 С учетом предпочтений: {preferences_text}"
+            full_plan += "\n\n"
+
+            for day in days:
+                day_name = day['day_name'].capitalize()
+                day_calories = day['calories']
+                day_proteins = day['proteins']
+                day_fats = day['fats']
+                day_carbs = day['carbs']
+
+                full_plan += f"📅 {day_name} (Б: {day_proteins}г, Ж: {day_fats}г, У: {day_carbs}г, {day_calories} ккал)\n\n"
+
+                breakfast = day['breakfast'][0]
+                full_plan += f"🍳 Завтрак: {breakfast['dish_name']}\n"
+                full_plan += f"{breakfast['description']}\n"
+                full_plan += f"Б: {breakfast['proteins']}г, Ж: {breakfast['fats']}г, У: {breakfast['carbs']}г, {breakfast['calories']} ккал\n\n"
+
+                lunch = day['lunch'][0]
+                full_plan += f"🥗 Обед: {lunch['dish_name']}\n"
+                full_plan += f"{lunch['description']}\n"
+                full_plan += f"Б: {lunch['proteins']}г, Ж: {lunch['fats']}г, У: {lunch['carbs']}г, {lunch['calories']} ккал\n\n"
+
+                dinner = day['dinner'][0]
+                full_plan += f"🍲 Ужин: {dinner['dish_name']}\n"
+                full_plan += f"{dinner['description']}\n"
+                full_plan += f"Б: {dinner['proteins']}г, Ж: {dinner['fats']}г, У: {dinner['carbs']}г, {dinner['calories']} ккал\n\n"
+
+                full_plan += "➖➖➖➖➖➖➖➖➖➖➖➖\n\n"
+
+            full_plan += f"Комментарии от нейросети: {response.get('commentary', [])}"
+
+            await bot.delete_message(chat_id=message.chat.id, message_id=original_message_id)
+            await message.answer(full_plan, reply_markup=plan_response_kb())

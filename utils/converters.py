@@ -49,3 +49,12 @@ def bmi_to_goal_converter(bmi):
         case _ if 18.5 <= bmi < 24.9: return string + 'Поддержание веса'
         case _ if bmi >= 25 : return string + 'Похудение'
         case _: return ''
+
+def activity_converter(activity):
+    match activity:
+        case 0: return 'Отсутствие активности'
+        case 1: return 'Лёгкая активность'
+        case 2: return 'Средняя активность'
+        case 3: return 'Высокая активность'
+        case 4: return 'Очень высокая активность'
+        case _: return 'нет данных'

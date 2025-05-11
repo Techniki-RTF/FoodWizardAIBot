@@ -13,7 +13,7 @@ def msj_equation(c_profile, activity):
         case 'male': x = 5
         case 'female': x = -161
     bmr = int((10 * weight + 6.25 * height - 5 * age + x) * activity_multipliers[activity])
-    return f'Ваша суточная норма калорий: {bmr} ккал{goal_multiplier(bmr, goal)}'
+    return [f'Ваша суточная норма калорий: {bmr} ккал{goal_multiplier(bmr, goal)}', bmr]
 
 def goal_multiplier(bmr, goal):
     match goal:
