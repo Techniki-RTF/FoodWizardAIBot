@@ -1,7 +1,7 @@
 from google import genai
 from google.genai import types
 
-SYSTEM_INSTRUCTION = """
+RECOGNITION_SYSTEM_INSTRUCTION = """
             Я буду отправлять фото еды, а ты должен распознать на фото еду и оценить примерный вес
             Если ты видишь, что несколько видов еды находятся в одной тарелке, то скорее всего это одно блюдо.
             Если блюд несколько, то перечисли все.
@@ -9,7 +9,7 @@ SYSTEM_INSTRUCTION = """
             Названия блюд на русском языке и перевод на английском для API Calorie Ninjas.
             """
 
-RESPONSE_SCHEMA = genai.types.Schema(
+RECOGNITION_RESPONSE_SCHEMA = genai.types.Schema(
     type = genai.types.Type.OBJECT,
     required = ["dishes"],
     properties = {
@@ -36,4 +36,98 @@ RESPONSE_SCHEMA = genai.types.Schema(
             ),
         ),
     },
+)
+
+PLAN_SYSTEM_INSTRUCTION = """
+        Ты - ассистент в похудении/поддержании веса/наборе массы.
+        Пользователь указывает свою цель и дневную норму калорий с учётом цели.
+        Твоя задача - составить план питания на неделю.
+        Нужно указать КБЖУ каждого дня, учесть дневную норму калорий, цель, индивидуальные предпочтения и диету, если они указаны.
+        Ответ должен быть на русском языке.
+        """
+
+meals_items = genai.types.Schema(
+                            type=genai.types.Type.OBJECT,
+                            required = ["dish_name", "description", "calories", "proteins", "fats", "carbs"],
+                            properties = {
+                                "dish_name": genai.types.Schema(
+                                    type=genai.types.Type.STRING,
+                                    description="Name of the dish."
+                                ),
+                                "description": genai.types.Schema(
+                                    type=genai.types.Type.STRING,
+                                    description="Brief description or ingredients of the dish."
+                                ),
+                                "calories": genai.types.Schema(
+                                    type=genai.types.Type.INTEGER,
+                                    description="Number of calories in this dish."
+                                ),
+                                "proteins": genai.types.Schema(
+                                    type=genai.types.Type.INTEGER,
+                                    description="Number of proteins in this dish."
+                                ),
+                                "fats": genai.types.Schema(
+                                    type=genai.types.Type.INTEGER,
+                                    description="Number of fats in this dish."
+                                ),
+                                "carbs": genai.types.Schema(
+                                    type=genai.types.Type.INTEGER,
+                                    description="Number of carbs in this dish."
+                                ),
+                            }
+                        )
+
+
+PLAN_RESPONSE_SCHEMA = genai.types.Schema(
+    type=genai.types.Type.OBJECT,
+    required = ["days"],
+    properties = {
+        "days": genai.types.Schema(
+            type = genai.types.Type.ARRAY,
+            description = "Seven days of week.",
+            min_items=7,
+            max_items=7,
+            items = genai.types.Schema(
+                type = genai.types.Type.OBJECT,
+                required = ["day_name", "breakfast", "lunch", "dinner", "calories", "proteins", "fats", "carbs"],
+                properties = {
+                    "day_name": genai.types.Schema(
+                        type=genai.types.Type.STRING,
+                        description = "Name of the day of the week, e.g., 'monday', 'tuesday', etc.",
+                    ),
+                    "breakfast": genai.types.Schema(
+                        type = genai.types.Type.ARRAY,
+                        description = "List of dishes for breakfast.",
+                        items = meals_items
+                    ),
+                    "lunch": genai.types.Schema(
+                        type = genai.types.Type.ARRAY,
+                        description = "List of dishes for lunch.",
+                        items=meals_items
+                    ),
+                    "dinner": genai.types.Schema(
+                        type = genai.types.Type.ARRAY,
+                        description = "List of dishes for dinner.",
+                        items = meals_items
+                    ),
+                    "calories": genai.types.Schema(
+                        type = genai.types.Type.INTEGER,
+                        description = "Total number of calories for this day.",
+                    ),
+                    "proteins": genai.types.Schema(
+                        type=genai.types.Type.INTEGER,
+                        description="Total number of proteins for this day.",
+                    ),
+                    "fats": genai.types.Schema(
+                        type=genai.types.Type.INTEGER,
+                        description="Total number of fats for this day.",
+                    ),
+                    "carbs": genai.types.Schema(
+                        type=genai.types.Type.INTEGER,
+                        description="Total number of carbs for this day.",
+                    ),
+                }
+            )
+        )
+    }
 )
