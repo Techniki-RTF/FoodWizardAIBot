@@ -118,7 +118,8 @@ async def c_param(callback: CallbackQuery, state: FSMContext):
 
 @start_cmd_router.callback_query(F.data == 'daily_kcal')
 async def daily_kcal(callback: CallbackQuery):
-    await callback.message.edit_text('Выберете ваш уровень активности:', reply_markup=daily_kcal_kb())
+    c_profile = (await get_profile(callback.from_user.id))
+    await callback.message.edit_text('Выберете ваш уровень активности:', reply_markup=daily_kcal_kb(c_profile['activity']))
 
 @start_cmd_router.callback_query(F.data.regexp(r'activity_[0-4]$'))
 async def daily_kcal_activity(callback: CallbackQuery):
