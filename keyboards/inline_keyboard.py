@@ -5,6 +5,7 @@ def main_menu_kb():
         [InlineKeyboardButton(text="Отправить изображение", callback_data='send_image')],
         [InlineKeyboardButton(text="Профиль", callback_data='profile')],
         [InlineKeyboardButton(text="Рассчитать суточную норму калорий", callback_data='daily_kcal')],
+        [InlineKeyboardButton(text="Составить недельный рацион", callback_data='nutrition_plan')],
         [InlineKeyboardButton(text="О боте", callback_data='about')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
@@ -20,6 +21,12 @@ def no_response_kb():
     inline_kb_list = [
         [InlineKeyboardButton(text="Отправить новое изображение", callback_data='send_image')],
         [InlineKeyboardButton(text="Главное меню", callback_data='back_home')]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
+
+def plan_response_kb():
+    inline_kb_list = [
+        [InlineKeyboardButton(text="Главное меню", callback_data='home')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
