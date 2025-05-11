@@ -132,50 +132,13 @@ async def daily_kcal_activity(callback: CallbackQuery):
     await callback.message.edit_text(f'{msj[0]}', reply_markup=back_home_kb())
 
 @start_cmd_router.callback_query(F.data == 'nutrition_plan')
-async def nutrition_plan(callback: CallbackQuery, bot: Bot):
+async def nutrition_plan(callback: CallbackQuery, state: FSMContext, bot: Bot):
     c_profile = (await get_profile(callback.from_user.id))
     c_daily_kcal = c_profile['daily_kcal']
     if not c_daily_kcal:
         await callback.message.edit_text(text=f"Заполните профиль и рассчитайте вашу суточную норму калорий перед использованием этой функции", reply_markup=back_home_kb())
         return
-    await callback.message.edit_text(text=f"План питания на {c_profile['daily_kcal']} ккал в день создаётся...")
-    await bot.send_chat_action(callback.message.chat.id, 'typing')
-    response = await generate_nutrition_plan(c_profile['daily_kcal'], goal_converter(c_profile['goal']))
-    match response:
-        case 'api_error':
-            await callback.message.edit_text('Произошла непредвиденная ошибка, попробуйте ещё раз', reply_markup=back_home_kb())
-        case _:
-            days = response.get('days', [])
-            if not days:
-                await callback.message.edit_text('Не удалось составить план питания, попробуйте ещё раз', reply_markup=back_home_kb())
-                return
-                
-            full_plan = f"🍽️ План питания на неделю ({c_profile['daily_kcal']} ккал/день)\n\n"
-            
-            for day in days:
-                day_name = day['day_name'].capitalize()
-                day_calories = day['calories']
-                day_proteins = day['proteins']
-                day_fats = day['fats']
-                day_carbs = day['carbs']
-                
-                full_plan += f"📅 {day_name} (Б: {day_proteins}г, Ж: {day_fats}г, У: {day_carbs}г, {day_calories} ккал)\n\n"
-                
-                breakfast = day['breakfast'][0]
-                full_plan += f"🍳 Завтрак: {breakfast['dish_name']}\n"
-                full_plan += f"{breakfast['description']}\n"
-                full_plan += f"Б: {breakfast['proteins']}г, Ж: {breakfast['fats']}г, У: {breakfast['carbs']}г, {breakfast['calories']} ккал\n\n"
-                
-                lunch = day['lunch'][0]
-                full_plan += f"🥗 Обед: {lunch['dish_name']}\n"
-                full_plan += f"{lunch['description']}\n"
-                full_plan += f"Б: {lunch['proteins']}г, Ж: {lunch['fats']}г, У: {lunch['carbs']}г, {lunch['calories']} ккал\n\n"
-                
-                dinner = day['dinner'][0]
-                full_plan += f"🍲 Ужин: {dinner['dish_name']}\n"
-                full_plan += f"{dinner['description']}\n"
-                full_plan += f"Б: {dinner['proteins']}г, Ж: {dinner['fats']}г, У: {dinner['carbs']}г, {dinner['calories']} ккал\n\n"
-                
-                full_plan += "➖➖➖➖➖➖➖➖➖➖➖➖\n\n"
-            await callback.message.delete()
-            await callback.message.answer(full_plan, reply_markup=plan_response_kb())
+    
+    await state.set_state(UserStates.waiting_for_diet_preferences)
+    await state.update_data(original_message_id=callback.message.message_id)
+    await callback.message.edit_text(text="Укажите особые предпочтения в вашем рационе, если они есть\nПримеры: десерты в приёмах пищи, вегетарианская диета, непереносимость цитрусовых\n\nЕсли у вас нет особых предпочтений, напишите \"Нет\"", reply_markup=back_home_kb())

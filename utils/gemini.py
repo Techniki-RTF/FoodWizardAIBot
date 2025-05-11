@@ -19,8 +19,11 @@ async def recognize_dish(image_bytes):
         print(e)
         return 'api_error'
 
-async def generate_nutrition_plan(daily_kcal, goal):
-    contents = [types.Content(role="user", parts=[types.Part.from_text(text=f"Дневная норма калорий: {daily_kcal}, цель: {goal}")])]
+async def generate_nutrition_plan(daily_kcal, goal, preferences=None):
+    prompt_text = f"Дневная норма калорий: {daily_kcal}, цель: {goal}"
+    if preferences:
+        prompt_text += f", предпочтения: {preferences}"
+    contents = [types.Content(role="user", parts=[types.Part.from_text(text=prompt_text)])]
     generate_content_config =  types.GenerateContentConfig(response_mime_type="application/json", response_schema=PLAN_RESPONSE_SCHEMA, system_instruction=PLAN_SYSTEM_INSTRUCTION)
     try:
         response = json.loads(client.models.generate_content(

@@ -89,3 +89,10 @@ def daily_kcal_kb(activity = None):
 def back_activity_kb():
     inline_kb_list = [[InlineKeyboardButton(text="Назад", callback_data='daily_kcal')]]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
+
+def retry_plan_kb():
+    inline_kb_list = [
+        [InlineKeyboardButton(text="Попробовать снова", callback_data='nutrition_plan')],
+        [InlineKeyboardButton(text="На главную", callback_data='back_home')]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)

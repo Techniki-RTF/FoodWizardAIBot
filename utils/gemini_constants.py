@@ -44,6 +44,7 @@ PLAN_SYSTEM_INSTRUCTION = """
         Твоя задача - составить план питания на неделю.
         Нужно указать КБЖУ каждого дня, учесть дневную норму калорий, цель, индивидуальные предпочтения и диету, если они указаны.
         Ответ должен быть на русском языке.
+        Учти, что весь текст должен уложиться в 4096 символов (ограничение Telegram).
         """
 
 meals_items = genai.types.Schema(
@@ -93,7 +94,7 @@ PLAN_RESPONSE_SCHEMA = genai.types.Schema(
                 properties = {
                     "day_name": genai.types.Schema(
                         type=genai.types.Type.STRING,
-                        description = "Name of the day of the week, e.g., 'monday', 'tuesday', etc.",
+                        description = "Name of the day of the week in Russian, e.g., 'Понедельник', 'Вторник', etc.",
                     ),
                     "breakfast": genai.types.Schema(
                         type = genai.types.Type.ARRAY,
@@ -128,6 +129,10 @@ PLAN_RESPONSE_SCHEMA = genai.types.Schema(
                     ),
                 }
             )
+        ),
+        "commentary": genai.types.Schema(
+            type=genai.types.Type.STRING,
+            description = "Short commentary text for user about this nutrition plan",
         )
     }
 )
