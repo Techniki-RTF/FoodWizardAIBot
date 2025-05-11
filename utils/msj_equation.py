@@ -17,7 +17,7 @@ def msj_equation(c_profile, activity):
 
 def goal_multiplier(bmr, goal):
     match goal:
-        case "weight_loss": bmr *= 0.85
+        case "lose_weight": bmr *= 0.85
         case "mass_gain": bmr *= 1.15
         case _: return ''
     return f'\nС учётом вашей цели ({goal_converter(goal)}): {int(bmr)} ккал'
