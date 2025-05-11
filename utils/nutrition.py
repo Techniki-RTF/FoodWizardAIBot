@@ -25,5 +25,5 @@ async def get_output(image_bytes):
             return False
 
     print(dishes_list)
-    return dishes_list
+    return {'dishes': dishes_list}
 
