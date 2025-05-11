@@ -134,6 +134,9 @@ async def daily_kcal_activity(callback: CallbackQuery):
 @start_cmd_router.callback_query(F.data == 'nutrition_plan')
 async def nutrition_plan(callback: CallbackQuery, bot: Bot):
     c_profile = (await get_profile(callback.from_user.id))
+    c_daily_kcal = c_profile['daily_kcal']
+    if not c_daily_kcal:
+        await callback.message.edit_text(text=f"Заполните профиль и рассчитайте вашу суточную норму калорий перед использованием этой функции", reply_markup=back_home_kb())
     await callback.message.edit_text(text=f"План питания на {c_profile['daily_kcal']} ккал в день создаётся...")
     await bot.send_chat_action(callback.message.chat.id, 'typing')
     response = await generate_nutrition_plan(c_profile['daily_kcal'], goal_converter(c_profile['goal']))
