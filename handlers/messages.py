@@ -84,10 +84,38 @@ async def handle_param(message: Message, state: FSMContext, bot: Bot):
 async def handle_reaction(message_reaction: MessageReactionUpdated, bot: Bot):
     if message_reaction.user.id == int(config("ADMINS")):
         c_db = get_db()
-        cursor = await c_db.execute('SELECT user_id, height, weight, age, sex, goal, bmi, created_at FROM users')
+        
+        cursor = await c_db.execute("PRAGMA table_info(users)")
+        columns_info = await cursor.fetchall()
+        column_names = [col[1] for col in columns_info]
+        
+        query = f"SELECT {', '.join(column_names)} FROM users"
+        cursor = await c_db.execute(query)
         rows = await cursor.fetchall()
-        users_info = "\n\n".join([f"👤 ID: {row[0]}\n📏 Рост: {row[1] or 'не указан'} см\n⚖️ Вес: {row[2] or 'не указан'} кг\n🔢 Возраст: {row[3] or 'не указан'}\n👫 Пол: {row[4] or 'не указан'}\n🎯 Цель: {row[5] or 'не указана'}\n📈 ИМТ: {row[6] or 'не указан'}\n📅 Создан: {row[7]}\n" for row in rows])
-        await bot.edit_message_text(text=f"📊 Данные пользователей ({datetime.now()}):\n\n{users_info}", message_id=message_reaction.message_id, chat_id=message_reaction.chat.id, reply_markup=back_home_kb())
+        
+        users_info = []
+        for row in rows:
+            user_data = []
+            for i, value in enumerate(row):
+                col_name = column_names[i]
+                formatted_value = value if value is not None else 'не указан'
+                user_data.append(f"{col_name}: {formatted_value}")
+            users_info.append("\n".join(user_data))
+        
+        all_users_info = "\n\n".join(users_info)
+        try:
+            await bot.edit_message_text(
+                text=f"Данные пользователей ({datetime.now()}):\n\n{all_users_info}",
+                message_id=message_reaction.message_id,
+                chat_id=message_reaction.chat.id,
+                reply_markup=back_home_kb()
+            )
+        except TelegramBadRequest:
+            await bot.send_message(
+                chat_id=message_reaction.chat.id,
+                text=f"Данные пользователей ({datetime.now()}):\n\n{all_users_info}",
+                reply_markup=back_home_kb()
+            )
 
 
 @start_msg_router.message(UserStates.waiting_for_diet_preferences)
