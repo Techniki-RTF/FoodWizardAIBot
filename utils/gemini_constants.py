@@ -44,6 +44,7 @@ PLAN_SYSTEM_INSTRUCTION = """
         Твоя задача - составить план питания на неделю.
         Нужно указать КБЖУ каждого дня, учесть дневную норму калорий, цель, индивидуальные предпочтения и диету, если они указаны.
         Ответ должен быть на русском языке.
+        КРИТИЧНО ВАЖНО:
         Учти, что весь текст должен уложиться в 4096 символов (ограничение Telegram).
         """
 
@@ -135,4 +136,73 @@ PLAN_RESPONSE_SCHEMA = genai.types.Schema(
             description = "Short commentary text for user about this nutrition plan",
         )
     }
+)
+
+RECIPE_SYSTEM_INSTRUCTION = """
+            Ты - ассистент в подборе питания.
+            Тебе передано название блюда (или блюд) и его (их) фото.
+            Твоя задача - найти низкокалорийный рецепт.
+            В твоём ответе обязательно должны быть: Название блюда, список ингредиентов, пошаговый рецепт, КБЖУ на 100г готового блюда.
+            КРИТИЧНО ВАЖНО:
+            Учти, что весь текст должен уложиться в менее 4096 символов (ограничение Telegram, MEDIA_CAPTION_TOO_LONG).
+            """
+
+RECIPE_RESPONSE_SCHEMA = genai.types.Schema(
+    type = genai.types.Type.OBJECT,
+    required = ["recipes"],
+    properties = {
+        "recipes": genai.types.Schema(
+            type = genai.types.Type.ARRAY,
+            description = "An array of dishes with their low-calorie recipes and nutritional information.",
+            items = genai.types.Schema(
+                type = genai.types.Type.OBJECT,
+                required = ["dish_name", "ingredients", "recipe", "nutritional_info"],
+                properties = {
+                    "dish_name": genai.types.Schema(
+                        type=genai.types.Type.STRING,
+                        description="Name of the low-calorie dish in Russian.",
+                    ),
+                    "ingredients": genai.types.Schema(
+                        type=genai.types.Type.ARRAY,
+                        description="List of ingredients for this low-calorie dish.",
+                        items=genai.types.Schema(
+                            type=genai.types.Type.STRING,
+                            description="An ingredient, e.g., '200г куриной грудки'",
+                        ),
+                    ),
+                    "recipe": genai.types.Schema(
+                        type = genai.types.Type.ARRAY,
+                        description = "Step-by-step instructions for preparing the low-calorie dish.",
+                         items=genai.types.Schema(
+                            type=genai.types.Type.STRING,
+                            description="One step of the recipe, e.g., 'Нарежьте куриную грудку кубиками.'",
+                        ),
+                    ),
+                    "nutritional_info": genai.types.Schema(
+                        type=genai.types.Type.OBJECT,
+                        description="Nutritional information for 100g of the finished low-calorie dish.",
+                        required=["calories", "protein", "fats", "carbs"],
+                        properties={
+                            "calories": genai.types.Schema(
+                                type=genai.types.Type.NUMBER,
+                                description="Calories per 100g in kcal."
+                            ),
+                            "protein": genai.types.Schema(
+                                type=genai.types.Type.NUMBER,
+                                description="Protein per 100g in grams."
+                            ),
+                            "fats": genai.types.Schema(
+                                type=genai.types.Type.NUMBER,
+                                description="Fats per 100g in grams."
+                            ),
+                            "carbs": genai.types.Schema(
+                                type=genai.types.Type.NUMBER,
+                                description="Carbohydrates per 100g in grams."
+                            ),
+                        }
+                    )
+                },
+            ),
+        ),
+    },
 )

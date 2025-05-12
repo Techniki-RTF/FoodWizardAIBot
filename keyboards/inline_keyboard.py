@@ -13,6 +13,7 @@ def main_menu_kb():
 def image_response_kb():
     inline_kb_list = [
         [InlineKeyboardButton(text="Отправить новое изображение", callback_data='send_image')],
+        [InlineKeyboardButton(text="Найти низкокалорийный рецепт", callback_data='find_recipe')],
         [InlineKeyboardButton(text="Главное меню", callback_data='home')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
@@ -24,7 +25,7 @@ def no_response_kb():
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
-def plan_response_kb():
+def home_kb():
     inline_kb_list = [
         [InlineKeyboardButton(text="Главное меню", callback_data='home')]
     ]
@@ -95,4 +96,10 @@ def retry_plan_kb():
         [InlineKeyboardButton(text="Попробовать снова", callback_data='nutrition_plan')],
         [InlineKeyboardButton(text="На главную", callback_data='back_home')]
     ]
+    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
+
+def recipe_list_kb(dishes):
+    inline_kb_list = [[InlineKeyboardButton(text="Отмена", callback_data='cancel')]]
+    for dish in dishes:
+        inline_kb_list.insert(0, [InlineKeyboardButton(text=dish, callback_data=f'recipe_{dish}')])
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
