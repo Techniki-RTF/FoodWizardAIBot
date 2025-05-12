@@ -1,14 +1,16 @@
+import io
+
 from aiogram import Router, F, Bot
 from aiogram.exceptions import *
 from aiogram.filters import CommandStart
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, BufferedInputFile
 from aiogram.fsm.context import FSMContext
 from states import UserStates
 from keyboards.inline_keyboard import *
 from db_handler.database import *
 from utils.converters import *
+from utils.gemini import generate_recipe
 from utils.msj_equation import msj_equation
-from utils.gemini import generate_nutrition_plan
 
 start_cmd_router = Router()
 
@@ -35,7 +37,6 @@ async def home(callback: CallbackQuery, state: FSMContext, bot: Bot):
     await callback.answer()
     answer = await callback.message.answer(f'Привет, {callback.from_user.full_name}!\nМеню:', reply_markup=main_menu_kb())
     await state.update_data(menu_message_id=answer.message_id)
-
 
 @start_cmd_router.callback_query(F.data == 'back_home')
 async def back_home(callback: CallbackQuery, state: FSMContext):
@@ -132,13 +133,84 @@ async def daily_kcal_activity(callback: CallbackQuery):
     await callback.message.edit_text(f'{msj[0]}', reply_markup=back_home_kb())
 
 @start_cmd_router.callback_query(F.data == 'nutrition_plan')
-async def nutrition_plan(callback: CallbackQuery, state: FSMContext, bot: Bot):
+async def nutrition_plan(callback: CallbackQuery, state: FSMContext):
     c_profile = (await get_profile(callback.from_user.id))
     c_daily_kcal = c_profile['daily_kcal']
     if not c_daily_kcal:
-        await callback.message.edit_text(text=f"Заполните профиль и рассчитайте вашу суточную норму калорий перед использованием этой функции", reply_markup=back_home_kb())
+        await callback.message.edit_text(text=f"Заполните профиль и рассчитайте вашу суточную норму калорий перед использованием этой функции",
+                                         reply_markup=back_home_kb())
         return
-    
     await state.set_state(UserStates.waiting_for_diet_preferences)
     await state.update_data(original_message_id=callback.message.message_id)
-    await callback.message.edit_text(text="Укажите особые предпочтения в вашем рационе, если они есть\nПримеры: десерты в приёмах пищи, вегетарианская диета, непереносимость цитрусовых\n\nЕсли у вас нет особых предпочтений, напишите \"Нет\"", reply_markup=back_home_kb())
+    await callback.message.edit_text(text="Укажите особые предпочтения в вашем рационе, если они есть\n"
+                                          "Примеры: десерты в приёмах пищи, вегетарианская диета, непереносимость цитрусовых\n"
+                                          "Если у вас нет особых предпочтений, напишите \"Нет\"", reply_markup=back_home_kb())
+
+@start_cmd_router.callback_query(F.data == 'find_recipe')
+async def recipe_choose(callback: CallbackQuery, bot: Bot):
+    image = callback.message.photo[-1]
+    file_info = await bot.get_file(image.file_id)
+
+    buffer = io.BytesIO()
+    await bot.download_file(file_info.file_path, destination=buffer)
+    buffer.seek(0)
+
+    file_bytes = buffer.getvalue()
+    file_name = f"{callback.message.message_id}_{image.file_unique_id}.png"
+    input_file = BufferedInputFile(file=file_bytes, filename=file_name)
+
+    dishes = [line.replace('Название блюда:', '').strip() for line in callback.message.caption.split('\n')
+              if line.startswith('Название блюда:')]
+
+    await callback.message.answer_photo(photo=input_file, caption='Для какого блюда найти рецепт?', reply_markup=recipe_list_kb(dishes))
+
+@start_cmd_router.callback_query(F.data.regexp(r'recipe_..*'))
+async def recipe_find(callback: CallbackQuery, bot: Bot):
+    image = callback.message.photo[-1]
+    file_info = await bot.get_file(image.file_id)
+
+    buffer = io.BytesIO()
+    await bot.download_file(file_info.file_path, destination=buffer)
+    buffer.seek(0)
+
+    file_bytes = buffer.getvalue()
+
+    dish = callback.data.replace('recipe_', '')
+
+    await callback.message.edit_caption(caption='Поиск рецепта в процессе', reply_markup=None)
+    response = await generate_recipe(dish, file_bytes)
+    
+    match response:
+        case 'api_error':
+            await callback.message.edit_caption(
+                text='Произошла непредвиденная ошибка, попробуйте ещё раз',
+                reply_markup=back_home_kb()
+            )
+        case _:
+            recipes = response.get('recipes', [])
+            if not recipes:
+                await callback.message.edit_caption(
+                    text='Не удалось найти рецепт, попробуйте ещё раз',
+                    reply_markup=back_home_kb()
+                )
+                return
+                
+            recipe = recipes[0]
+            full_recipe = f"🍽️ {recipe['dish_name']}\n\n"
+            
+            full_recipe += f"📊 Пищевая ценность (на 100г):\n"
+            full_recipe += f"🔸 Калории: {recipe['nutritional_info']['calories']} ккал\n"
+            full_recipe += f"🔸 Белки: {recipe['nutritional_info']['protein']}г\n"
+            full_recipe += f"🔸 Жиры: {recipe['nutritional_info']['fats']}г\n"
+            full_recipe += f"🔸 Углеводы: {recipe['nutritional_info']['carbs']}г\n\n"
+            
+            full_recipe += "📝 Ингредиенты:\n"
+            for i, ingredient in enumerate(recipe['ingredients'], 1):
+                full_recipe += f"{i}. {ingredient}\n"
+            full_recipe += "\n"
+            
+            full_recipe += "👨‍🍳 Способ приготовления:\n"
+            for i, step in enumerate(recipe['recipe'], 1):
+                full_recipe += f"{i}. {step}\n"
+            
+            await callback.message.edit_caption(caption=full_recipe, reply_markup=home_kb())
