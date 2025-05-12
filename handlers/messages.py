@@ -6,7 +6,7 @@ from aiogram import F, Router, Bot
 from aiogram.types import Message, BufferedInputFile, MessageReactionUpdated
 from aiogram.fsm.context import FSMContext
 
-from keyboards.inline_keyboard import back_home_kb, image_response_kb, no_response_kb, plan_response_kb, retry_plan_kb
+from keyboards.inline_keyboard import back_home_kb, image_response_kb, no_response_kb, home_kb, retry_plan_kb
 from states import UserStates
 from utils.converters import param_input_converter, goal_converter
 from utils.gemini import generate_nutrition_plan
@@ -176,4 +176,4 @@ async def handle_diet_preferences(message: Message, state: FSMContext, bot: Bot)
             full_plan += f"Комментарии от нейросети: {response.get('commentary', [])}"
 
             await bot.delete_message(chat_id=message.chat.id, message_id=original_message_id)
-            await message.answer(full_plan, reply_markup=plan_response_kb())
+            await message.answer(full_plan, reply_markup=home_kb())
