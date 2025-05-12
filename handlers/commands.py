@@ -125,8 +125,8 @@ async def daily_kcal(callback: CallbackQuery):
 @start_cmd_router.callback_query(F.data.regexp(r'activity_[0-4]$'))
 async def daily_kcal_activity(callback: CallbackQuery):
     user_id = callback.from_user.id
-    c_profile = await get_profile(user_id)
     await change_activity(user_id, int(callback.data[-1]))
+    c_profile = await get_profile(user_id)
     msj = msj_equation(c_profile, callback.data[-1])
     await change_daily_kcal(user_id, msj[1])
     await callback.message.edit_text(f'{msj[0]}', reply_markup=back_home_kb())

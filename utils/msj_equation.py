@@ -8,7 +8,7 @@ def msj_equation(c_profile, activity):
     weight, height, age, sex, goal = (
         c_profile['weight'], c_profile['height'], c_profile['age'], c_profile['sex'], c_profile['goal'])
     if None in (weight, height, age, sex):
-        return 'Недостаточно данных.\nЗаполните профиль, пожалуйста.'
+        return ['Недостаточно данных.\nЗаполните профиль, пожалуйста.', None]
     match sex:
         case 'male': x = 5
         case 'female': x = -161
@@ -18,7 +18,11 @@ def msj_equation(c_profile, activity):
 
 def goal_multiplier(bmr, goal):
     match goal:
-        case "lose_weight": bmr *= 0.85
-        case "mass_gain": bmr *= 1.15
-        case _: return ''
-    return [f'\nС учётом вашей цели ({goal_converter(goal)}): {int(bmr)} ккал', bmr]
+        case "lose_weight": 
+            bmr *= 0.85
+            return [f'\nС учётом вашей цели ({goal_converter(goal)}): {int(bmr)} ккал', bmr]
+        case "mass_gain": 
+            bmr *= 1.15
+            return [f'\nС учётом вашей цели ({goal_converter(goal)}): {int(bmr)} ккал', bmr]
+        case _: 
+            return ['', bmr]
