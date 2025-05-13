@@ -6,7 +6,7 @@ from aiogram import F, Router, Bot
 from aiogram.types import Message, BufferedInputFile, MessageReactionUpdated
 from aiogram.fsm.context import FSMContext
 
-from keyboards.inline_keyboard import back_home_kb, image_response_kb, no_response_kb, home_kb, retry_plan_kb
+from keyboards.inline_keyboard import *
 from states import UserStates
 from utils.converters import param_input_converter, goal_converter
 from utils.gemini import generate_nutrition_plan
@@ -73,10 +73,10 @@ async def handle_param(message: Message, state: FSMContext, bot: Bot):
     param = state_data.get('param')
     output = param_input_converter(message.text, param)
     if not output:
-        await bot.edit_message_text(text=f'Неверный формат ввода данных ({message.text})', reply_markup=back_home_kb(), message_id=original_message_id, chat_id=message.chat.id)
+        await bot.edit_message_text(text=f'Неверный формат ввода данных ({message.text})', reply_markup=back_param_kb(False), message_id=original_message_id, chat_id=message.chat.id)
     else:
         await change_param(message.from_user.id, param, output)
-        await bot.edit_message_text(text='Параметр успешно установлен!', reply_markup=back_home_kb(), message_id=original_message_id, chat_id=message.chat.id)
+        await bot.edit_message_text(text='Параметр успешно установлен!', reply_markup=back_param_kb(), message_id=original_message_id, chat_id=message.chat.id)
     await message.delete()
     await state.clear()
 
