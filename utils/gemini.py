@@ -71,3 +71,20 @@ async def recipe_response_to_json(response):
     except APIError as e:
         print(e)
         return 'api_error'
+
+async def generate_food_swap(dishes, image_bytes):
+    prompt_text = f"Блюдо: {", ".join(dishes)}"
+    contents = [types.Content(role="user", parts=[types.Part.from_text(text=prompt_text)]), types.Part.from_bytes(data=image_bytes, mime_type="image/png")]
+    generate_content_config =  types.GenerateContentConfig(response_mime_type="application/json",
+                                                           system_instruction=FOOD_SWAP_SYSTEM_INSTRUCTION,
+                                                           response_schema=FOOD_SWAP_RESPONSE_SCHEMA)
+    try:
+        response = json.loads(client.models.generate_content(
+            model= "gemini-2.5-flash-preview-04-17",
+            contents=contents,
+            config=generate_content_config).text)
+        print(response)
+        return response
+    except APIError as e:
+        print(e)
+        return 'api_error'

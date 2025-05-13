@@ -14,6 +14,7 @@ def image_response_kb():
     inline_kb_list = [
         [InlineKeyboardButton(text="Отправить новое изображение", callback_data='send_image')],
         [InlineKeyboardButton(text="Найти низкокалорийный рецепт", callback_data='find_recipe')],
+        [InlineKeyboardButton(text="Найти низкокалорийные альтернативы продуктам", callback_data='find_food_swap')],
         [InlineKeyboardButton(text="Главное меню", callback_data='home')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
@@ -108,4 +109,8 @@ def recipe_list_kb(dishes):
     inline_kb_list = [[InlineKeyboardButton(text="Отмена", callback_data='cancel')]]
     for dish in dishes:
         inline_kb_list.insert(0, [InlineKeyboardButton(text=dish, callback_data=f'recipe_{dish}')])
+    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
+
+def cancel_kb():
+    inline_kb_list = [[InlineKeyboardButton(text="Отмена", callback_data='cancel')]]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
