@@ -147,7 +147,8 @@ async def nutrition_plan(callback: CallbackQuery, state: FSMContext):
                                           "Если у вас нет особых предпочтений, напишите \"Нет\"", reply_markup=back_home_kb())
 
 @start_cmd_router.callback_query(F.data == 'find_recipe')
-async def recipe_choose(callback: CallbackQuery, bot: Bot):
+async def recipe_choose(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    await callback.answer()
     image = callback.message.photo[-1]
     file_info = await bot.get_file(image.file_id)
 
@@ -161,36 +162,41 @@ async def recipe_choose(callback: CallbackQuery, bot: Bot):
 
     dishes = [line.replace('Название блюда:', '').strip() for line in callback.message.caption.split('\n')
               if line.startswith('Название блюда:')]
+    
+    await state.set_state(UserStates.waiting_for_recipe)
+    await state.update_data(file_bytes=file_bytes)
 
-    await callback.message.answer_photo(photo=input_file, caption='Для какого блюда найти рецепт?', reply_markup=recipe_list_kb(dishes))
+    answer = await callback.message.answer_photo(
+        photo=input_file, 
+        caption='Для какого блюда найти рецепт?', 
+        reply_markup=recipe_list_kb(dishes)
+    )
+    
+    await state.update_data(original_message_id=answer.message_id)
 
 @start_cmd_router.callback_query(F.data.regexp(r'recipe_..*'))
-async def recipe_find(callback: CallbackQuery, bot: Bot):
-    image = callback.message.photo[-1]
-    file_info = await bot.get_file(image.file_id)
-
-    buffer = io.BytesIO()
-    await bot.download_file(file_info.file_path, destination=buffer)
-    buffer.seek(0)
-
-    file_bytes = buffer.getvalue()
+async def recipe_find(callback: CallbackQuery, state: FSMContext):
+    state_data = await state.get_data()
+    file_bytes = state_data.get('file_bytes')
 
     dish = callback.data.replace('recipe_', '')
 
     await callback.message.edit_caption(caption='Поиск рецепта в процессе', reply_markup=None)
     response = await generate_recipe(dish, file_bytes)
     
+    await state.clear()
+    
     match response:
         case 'api_error':
             await callback.message.edit_caption(
-                text='Произошла непредвиденная ошибка, попробуйте ещё раз',
+                caption='Произошла непредвиденная ошибка, попробуйте ещё раз',
                 reply_markup=back_home_kb()
             )
         case _:
             recipes = response.get('recipes', [])
             if not recipes:
                 await callback.message.edit_caption(
-                    text='Не удалось найти рецепт, попробуйте ещё раз',
+                    caption='Не удалось найти рецепт, попробуйте ещё раз',
                     reply_markup=back_home_kb()
                 )
                 return
@@ -214,3 +220,15 @@ async def recipe_find(callback: CallbackQuery, bot: Bot):
                 full_recipe += f"{i}. {step}\n"
             
             await callback.message.edit_caption(caption=full_recipe, reply_markup=home_kb())
+
+@start_cmd_router.callback_query(F.data == 'cancel')
+async def cancel_recipe(callback: CallbackQuery, state: FSMContext):
+    current_state = await state.get_state()
+    match current_state:
+        case UserStates.waiting_for_recipe:
+            await state.clear()
+            await callback.answer('Поиск рецепта отменен')
+            await callback.message.delete()
+        case _:
+            await callback.answer()
+            await callback.message.delete()
