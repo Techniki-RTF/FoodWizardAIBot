@@ -126,8 +126,8 @@ async def daily_kcal(callback: CallbackQuery):
 @start_cmd_router.callback_query(F.data.regexp(r'activity_[0-4]$'))
 async def daily_kcal_activity(callback: CallbackQuery):
     user_id = callback.from_user.id
-    await change_activity(user_id, int(callback.data[-1]))
     c_profile = await get_profile(user_id)
+    await change_activity(user_id, int(callback.data[-1]))
     msj = msj_equation(c_profile, callback.data[-1])
     await change_daily_kcal(user_id, msj[1])
     await callback.message.edit_text(f'{msj[0]}', reply_markup=back_home_kb())
@@ -221,6 +221,32 @@ async def recipe_find(callback: CallbackQuery, state: FSMContext):
             
             await callback.message.edit_caption(caption=full_recipe, reply_markup=home_kb())
 
+@start_cmd_router.callback_query(F.data == 'find_food_swap')
+async def find_food_swap(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    await callback.answer()
+    image = callback.message.photo[-1]
+    file_info = await bot.get_file(image.file_id)
+
+    buffer = io.BytesIO()
+    await bot.download_file(file_info.file_path, destination=buffer)
+    buffer.seek(0)
+
+    file_bytes = buffer.getvalue()
+    file_name = f"{callback.message.message_id}_{image.file_unique_id}.png"
+    input_file = BufferedInputFile(file=file_bytes, filename=file_name)
+
+    await state.set_state(UserStates.waiting_for_food_swap)
+    await state.update_data(file_bytes=file_bytes)
+    
+    answer = await callback.message.answer_photo(
+        caption="Укажите, какие ингредиенты вы хотели бы заменить на более низкокалорийные альтернативы.\n"
+                "Например: \"заменить масло, сметану и сахар\" или \"все ингредиенты\"",
+        photo=input_file,
+        reply_markup=cancel_kb()
+    )
+    
+    await state.update_data(original_message_id=answer.message_id)
+
 @start_cmd_router.callback_query(F.data == 'cancel')
 async def cancel_recipe(callback: CallbackQuery, state: FSMContext):
     current_state = await state.get_state()
@@ -228,6 +254,10 @@ async def cancel_recipe(callback: CallbackQuery, state: FSMContext):
         case UserStates.waiting_for_recipe:
             await state.clear()
             await callback.answer('Поиск рецепта отменен')
+            await callback.message.delete()
+        case UserStates.waiting_for_food_swap:
+            await state.clear()
+            await callback.answer('Поиск альтернатив отменен')
             await callback.message.delete()
         case _:
             await callback.answer()

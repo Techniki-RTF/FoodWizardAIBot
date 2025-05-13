@@ -9,7 +9,7 @@ from aiogram.fsm.context import FSMContext
 from keyboards.inline_keyboard import *
 from states import UserStates
 from utils.converters import param_input_converter, goal_converter
-from utils.gemini import generate_nutrition_plan
+from utils.gemini import generate_nutrition_plan, generate_food_swap
 from utils.nutrition import get_output
 from db_handler.database import change_param, get_db, get_profile
 from aiogram.exceptions import TelegramBadRequest
@@ -205,3 +205,67 @@ async def handle_diet_preferences(message: Message, state: FSMContext, bot: Bot)
 
             await bot.delete_message(chat_id=message.chat.id, message_id=original_message_id)
             await message.answer(full_plan, reply_markup=home_kb())
+
+@start_msg_router.message(UserStates.waiting_for_food_swap)
+async def handle_food_swap(message: Message, state: FSMContext, bot: Bot):
+    food_to_swap = message.text
+
+    state_data = await state.get_data()
+    original_message_id = state_data.get('original_message_id')
+    file_bytes = state_data.get('file_bytes')
+
+    await message.delete()
+    
+    if len(food_to_swap) > 100:
+        await bot.edit_message_caption(
+            caption="Слишком длинный текст. Пожалуйста, укажите ингредиенты не более 100 символов.",
+            chat_id=message.chat.id,
+            message_id=original_message_id,
+            reply_markup=back_home_kb()
+        )
+        return
+
+    await bot.edit_message_caption(
+        caption="Поиск низкокалорийных альтернатив в процессе...",
+        chat_id=message.chat.id,
+        message_id=original_message_id,
+        reply_markup=None
+    )
+
+    await bot.send_chat_action(message.chat.id, 'typing')
+
+    response = await generate_food_swap([food_to_swap], file_bytes)
+
+    await state.clear()
+
+    match response:
+        case 'api_error':
+            await bot.edit_message_caption(
+                caption='Произошла непредвиденная ошибка, попробуйте ещё раз',
+                chat_id=message.chat.id,
+                message_id=original_message_id,
+                reply_markup=back_home_kb()
+            )
+        case _:
+            result = f"🔄 Низкокалорийные альтернативы для ингредиентов:\n\n"
+            
+            for item in response['swapped']:
+                result += f"{item['original_ingredient']} ➡️ {item['alternative']}\n\n"
+                result += f"{item['description']}\n"
+                
+                nutrition = item['nutritional_info']
+                
+                if nutrition['calories'] and nutrition['calories_old']:
+                    cal_diff = nutrition['calories_old'] - nutrition['calories']
+                    cal_percent = round((cal_diff / nutrition['calories_old']) * 100)
+                    result += f"Калории: {nutrition['calories']} ккал вместо {nutrition['calories_old']} ккал (-{cal_diff} ккал, -{cal_percent}%)\n\n"
+                
+                if nutrition['protein'] or nutrition['fats'] or nutrition['carbs']:
+                    result += f"БЖУ разница (на 100г): Б: {nutrition['protein']}г, Ж: {nutrition['fats']}г, У: {nutrition['carbs']}г\n\n"
+            
+            await bot.edit_message_caption(
+                caption=result,
+                chat_id=message.chat.id,
+                message_id=original_message_id,
+                reply_markup=home_kb()
+            )
