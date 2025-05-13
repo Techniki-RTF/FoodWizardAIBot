@@ -1,7 +1,7 @@
 import io
 
 from aiogram import Router, F, Bot
-from aiogram.exceptions import *
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import CommandStart
 from aiogram.types import Message, CallbackQuery, BufferedInputFile
 from aiogram.fsm.context import FSMContext
@@ -200,26 +200,48 @@ async def recipe_find(callback: CallbackQuery, state: FSMContext):
                     reply_markup=back_home_kb()
                 )
                 return
-                
+
             recipe = recipes[0]
+
             full_recipe = f"🍽️ {recipe['dish_name']}\n\n"
-            
+
             full_recipe += f"📊 Пищевая ценность (на 100г):\n"
             full_recipe += f"🔸 Калории: {recipe['nutritional_info']['calories']} ккал\n"
             full_recipe += f"🔸 Белки: {recipe['nutritional_info']['protein']}г\n"
             full_recipe += f"🔸 Жиры: {recipe['nutritional_info']['fats']}г\n"
             full_recipe += f"🔸 Углеводы: {recipe['nutritional_info']['carbs']}г\n\n"
-            
+
             full_recipe += "📝 Ингредиенты:\n"
             for i, ingredient in enumerate(recipe['ingredients'], 1):
                 full_recipe += f"{i}. {ingredient}\n"
             full_recipe += "\n"
-            
+
             full_recipe += "👨‍🍳 Способ приготовления:\n"
             for i, step in enumerate(recipe['recipe'], 1):
                 full_recipe += f"{i}. {step}\n"
-            
-            await callback.message.edit_caption(caption=full_recipe, reply_markup=home_kb())
+
+            try:
+                await callback.message.edit_caption(caption=full_recipe, reply_markup=home_kb())
+            except TelegramBadRequest:
+                header = f"🍽️ {recipe['dish_name']}\n\n"
+                header += f"📊 Пищевая ценность (на 100г):\n"
+                header += f"🔸 Калории: {recipe['nutritional_info']['calories']} ккал\n"
+                header += f"🔸 Белки: {recipe['nutritional_info']['protein']}г\n"
+                header += f"🔸 Жиры: {recipe['nutritional_info']['fats']}г\n"
+                header += f"🔸 Углеводы: {recipe['nutritional_info']['carbs']}г\n"
+                
+                ingredients = "📝 Ингредиенты:\n"
+                for i, ingredient in enumerate(recipe['ingredients'], 1):
+                    if ingredient not in ['recipe', 'nutritional_info']:
+                        ingredients += f"{i}. {ingredient}\n"
+                
+                cooking = "👨‍🍳 Способ приготовления:\n"
+                for i, step in enumerate(recipe['recipe'], 1):
+                    cooking += f"{i}. {step}\n"
+                
+                await callback.message.edit_caption(caption=header, reply_markup=None)
+                await callback.message.answer(ingredients)
+                await callback.message.answer(cooking, reply_markup=home_kb())
 
 @start_cmd_router.callback_query(F.data == 'find_food_swap')
 async def find_food_swap(callback: CallbackQuery, state: FSMContext, bot: Bot):
