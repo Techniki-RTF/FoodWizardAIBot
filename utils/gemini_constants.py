@@ -207,3 +207,66 @@ RECIPE_RESPONSE_SCHEMA = genai.types.Schema(
         ),
     },
 )
+
+FOOD_SWAP_SYSTEM_INSTRUCTION = """
+            Ты - ассистент в подборе питания.
+            Тебе передано название блюда (или блюд) и его (их) фото.
+            Твоя задача - найти низкокалорийную замену для ингредиентов в блюде (блюдах).
+            Если, на твой взгляд, заменять нечего, то верни пустой json.
+            """
+
+FOOD_SWAP_RESPONSE_SCHEMA = genai.types.Schema(
+    type = genai.types.Type.OBJECT,
+    required = ["swapped"],
+    properties = {
+        "swapped": genai.types.Schema(
+            type = genai.types.Type.ARRAY,
+            description = "An array of ingredients with their low-calorie alternatives.",
+            items = genai.types.Schema(
+                type = genai.types.Type.OBJECT,
+                required = [],
+                properties = {
+                    "original_ingredient": genai.types.Schema(
+                        type=genai.types.Type.STRING,
+                        description="Name of the original ingredient in Russian.",
+                    ),
+                    "alternative": genai.types.Schema(
+                        type=genai.types.Type.STRING,
+                        description="Name of the low-calorie alternative in Russian.",
+                    ),
+                    "description": genai.types.Schema(
+                        type=genai.types.Type.STRING,
+                        description="Brief description of why and how to replace the ingredient.",
+                    ),
+                    "nutritional_info": genai.types.Schema(
+                        type=genai.types.Type.OBJECT,
+                        description="Nutritional comparison between original and alternative.",
+                        required=["calories", "protein", "fats", "carbs"],
+                        properties={
+                            "calories": genai.types.Schema(
+                                type=genai.types.Type.NUMBER,
+                                description="Calories in alternative per 100g in kcal."
+                            ),
+                            "calories_old": genai.types.Schema(
+                                type=genai.types.Type.NUMBER,
+                                description="Calories in original ingredient per 100g in kcal."
+                            ),
+                            "protein": genai.types.Schema(
+                                type=genai.types.Type.NUMBER,
+                                description="Protein difference per 100g in grams."
+                            ),
+                            "fats": genai.types.Schema(
+                                type=genai.types.Type.NUMBER,
+                                description="Fats difference per 100g in grams."
+                            ),
+                            "carbs": genai.types.Schema(
+                                type=genai.types.Type.NUMBER,
+                                description="Carbohydrates difference per 100g in grams."
+                            ),
+                        }
+                    )
+                },
+            ),
+        ),
+    },
+)
