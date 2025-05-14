@@ -59,10 +59,12 @@ async def handle_image(message: Message, state: FSMContext, bot: Bot):
              await answer.edit_text('Произошла непредвиденная ошибка, попробуйте ещё раз', reply_markup=no_response_kb())
         case _:
             dishes = response.get('dishes', response) if isinstance(response, dict) else response
-            dish_data = [(dish['dish_ru'], dish['weight'], dish['calories_per_100g'], dish['calories_per_total']) for dish in dishes]
+            dish_data = [(dish['dish_ru'], dish['weight'], dish['calories_per_100g'], dish['calories_per_total'], dish['pfc_per_100g'], dish['pfc_per_total']) for dish in dishes]
             output = ''
-            for dish_name, dish_weight, dish_calories_per_100g, dish_total_calories in dish_data:
-                output += f"Название блюда: {dish_name}\nВес: {dish_weight}г\nКалории (100г): {dish_calories_per_100g} ккал\nКалории ({dish_weight}г): {dish_total_calories} ккал\n\n"
+            for dish_name, dish_weight, dish_calories_per_100g, dish_total_calories, pfc_per_100g, pfc_per_total in dish_data:
+                output += (f"Название блюда: {dish_name}\nВес: {dish_weight}г\n\n"
+                           f"Калории (100г): {dish_calories_per_100g} ккал\nКалории ({dish_weight}г): {dish_total_calories} ккал\n\n"
+                           f"БЖУ (100г): {pfc_per_100g}\nБЖУ ({dish_weight}г): {pfc_per_total}\n\n")
             await answer.delete()
             await message.answer_photo(photo=input_file, caption=f'{output}', reply_markup=image_response_kb())
 
