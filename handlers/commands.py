@@ -1,15 +1,15 @@
-import io
-
 from aiogram import Router, F, Bot
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import CommandStart
-from aiogram.types import Message, CallbackQuery, BufferedInputFile
 from aiogram.fsm.context import FSMContext
-from states import UserStates
-from keyboards.inline_keyboard import *
+from aiogram.types import Message, CallbackQuery
+
 from db_handler.database import *
+from keyboards.inline_keyboard import *
+from states import UserStates
 from utils.converters import *
 from utils.gemini import generate_recipe
+from utils.image_data import get_image_data
 from utils.msj_equation import msj_equation
 
 start_cmd_router = Router()
@@ -149,16 +149,7 @@ async def nutrition_plan(callback: CallbackQuery, state: FSMContext):
 @start_cmd_router.callback_query(F.data == 'find_recipe')
 async def recipe_choose(callback: CallbackQuery, state: FSMContext, bot: Bot):
     await callback.answer()
-    image = callback.message.photo[-1]
-    file_info = await bot.get_file(image.file_id)
-
-    buffer = io.BytesIO()
-    await bot.download_file(file_info.file_path, destination=buffer)
-    buffer.seek(0)
-
-    file_bytes = buffer.getvalue()
-    file_name = f"{callback.message.message_id}_{image.file_unique_id}.png"
-    input_file = BufferedInputFile(file=file_bytes, filename=file_name)
+    file_bytes, input_file = await get_image_data(callback.message, bot)
 
     dishes = [line.replace('Название блюда:', '').strip() for line in callback.message.caption.split('\n')
               if line.startswith('Название блюда:')]
@@ -246,16 +237,7 @@ async def recipe_find(callback: CallbackQuery, state: FSMContext):
 @start_cmd_router.callback_query(F.data == 'find_food_swap')
 async def find_food_swap(callback: CallbackQuery, state: FSMContext, bot: Bot):
     await callback.answer()
-    image = callback.message.photo[-1]
-    file_info = await bot.get_file(image.file_id)
-
-    buffer = io.BytesIO()
-    await bot.download_file(file_info.file_path, destination=buffer)
-    buffer.seek(0)
-
-    file_bytes = buffer.getvalue()
-    file_name = f"{callback.message.message_id}_{image.file_unique_id}.png"
-    input_file = BufferedInputFile(file=file_bytes, filename=file_name)
+    file_bytes, input_file = await get_image_data(callback.message, bot)
 
     await state.set_state(UserStates.waiting_for_food_swap)
     await state.update_data(file_bytes=file_bytes)
