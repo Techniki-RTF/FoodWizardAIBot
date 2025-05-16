@@ -180,7 +180,7 @@ async def recipe_find(callback: CallbackQuery, state: FSMContext):
     match response:
         case 'api_error':
             await callback.message.edit_caption(
-                caption='Произошла непредвиденная ошибка, попробуйте ещё раз',
+                caption='Произошла непредвиденная ошибка на стороне API, попробуйте ещё раз',
                 reply_markup=back_home_kb()
             )
         case _:

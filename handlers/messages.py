@@ -156,7 +156,7 @@ async def handle_diet_preferences(message: Message, state: FSMContext, bot: Bot)
     match response:
         case 'api_error':
             await bot.edit_message_text(
-                text='Произошла непредвиденная ошибка, попробуйте ещё раз',
+                text='Произошла непредвиденная ошибка на стороне API, попробуйте ещё раз',
                 chat_id=message.chat.id,
                 message_id=original_message_id,
                 reply_markup=back_home_kb()
@@ -243,7 +243,7 @@ async def handle_food_swap(message: Message, state: FSMContext, bot: Bot):
     match response:
         case 'api_error':
             await bot.edit_message_caption(
-                caption='Произошла непредвиденная ошибка, попробуйте ещё раз',
+                caption='Произошла непредвиденная ошибка на стороне API, попробуйте ещё раз',
                 chat_id=message.chat.id,
                 message_id=original_message_id,
                 reply_markup=back_home_kb()
