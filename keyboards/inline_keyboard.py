@@ -73,8 +73,8 @@ def params_kb():
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
-def back_params_kb():
-    inline_kb_list = [[InlineKeyboardButton(text="Назад", callback_data='params')]]
+def back_kb(callback):
+    inline_kb_list = [[InlineKeyboardButton(text="Назад", callback_data=f'{callback}')]]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 def daily_kcal_kb(activity = None):

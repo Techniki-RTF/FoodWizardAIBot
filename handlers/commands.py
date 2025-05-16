@@ -93,7 +93,7 @@ async def c_goal(callback: CallbackQuery):
     await change_user_sex(callback.from_user.id, callback.data)
     await callback.message.edit_text(
         f"Вы выбрали {user_sex_converter(callback.data)} пол",
-        reply_markup=back_home_kb())
+        reply_markup=back_kb('profile'))
 
 @start_cmd_router.callback_query(F.data == 'params')
 async def params(callback: CallbackQuery):
@@ -106,7 +106,7 @@ async def c_goal(callback: CallbackQuery):
     await change_goal(callback.from_user.id, callback.data)
     await callback.message.edit_text(
         f"Вы выбрали {goal_converter(callback.data)} в качестве цели",
-        reply_markup=back_home_kb())
+        reply_markup=back_kb('profile'))
 
 @start_cmd_router.callback_query(F.data.in_({'c_height', 'c_weight', 'c_age'}))
 async def c_param(callback: CallbackQuery, state: FSMContext):
@@ -115,7 +115,7 @@ async def c_param(callback: CallbackQuery, state: FSMContext):
     await state.update_data(param=callback.data)
     await callback.message.edit_text(
         f"Отправьте значение параметра в формате {params_converter(callback.data)}",
-        reply_markup=back_params_kb()
+        reply_markup=back_kb('params')
     )
 
 @start_cmd_router.callback_query(F.data == 'daily_kcal')
