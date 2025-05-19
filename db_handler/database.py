@@ -24,8 +24,8 @@ async def init_db():
             "goal": "TEXT DEFAULT NULL",
             "activity": "INTEGER DEFAULT NULL",
             "daily_kcal": "INTEGER DEFAULT NULL",
-            "bmi": "REAL DEFAULT 0",
             "bmi": "TEXT DEFAULT 0",
+            "lang": "TEXT DEFAULT NULL",
             "created_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
         }
 
