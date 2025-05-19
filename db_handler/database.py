@@ -20,11 +20,12 @@ async def init_db():
             "height": "REAL DEFAULT NULL",
             "weight": "REAL DEFAULT NULL",
             "age": "INTEGER DEFAULT NULL",
-            "sex": "REAL DEFAULT NULL",
-            "goal": "REAL DEFAULT NULL",
+            "sex": "TEXT DEFAULT NULL",
+            "goal": "TEXT DEFAULT NULL",
             "activity": "INTEGER DEFAULT NULL",
             "daily_kcal": "INTEGER DEFAULT NULL",
             "bmi": "REAL DEFAULT 0",
+            "bmi": "TEXT DEFAULT 0",
             "created_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
         }
 
