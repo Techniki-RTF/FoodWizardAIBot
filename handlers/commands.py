@@ -27,9 +27,26 @@ async def delete_menu_message(message, current_state, bot):
 async def cmd_start(message: Message, state: FSMContext, bot: Bot):
     await delete_menu_message(message, state, bot)
     await message.delete()
-    await create_user(message.from_user.id)
+    uid = message.from_user.id
+    await create_user(uid)
+    if not await get_user_lang(uid):
+        await lang(message=message)
+        return
     answer = await message.answer(f'Привет, {message.from_user.full_name}!\nМеню:', reply_markup=main_menu_kb())
     await state.update_data(menu_message_id=answer.message_id)
+
+@start_cmd_router.callback_query(F.data == 'lang')
+async def lang(callback: CallbackQuery = None, message: Message = None):
+    if callback:
+        await callback.message.edit_text('Выбери язык / Choose your language', reply_markup=lang_kb())
+    else:
+        await message.answer('Выбери язык / Choose your language', reply_markup=lang_kb())
+
+@start_cmd_router.callback_query(F.data.in_({'ru', 'en'}))
+async def lang_handler(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    await change_user_lang(callback.from_user.id, callback.data)
+    await callback.message.delete()
+    await home(callback, state, bot)
 
 @start_cmd_router.callback_query(F.data == 'home')
 async def home(callback: CallbackQuery, state: FSMContext, bot: Bot):

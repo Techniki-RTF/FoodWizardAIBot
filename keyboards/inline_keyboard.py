@@ -77,6 +77,13 @@ def back_kb(callback):
     inline_kb_list = [[InlineKeyboardButton(text="Назад", callback_data=f'{callback}')]]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
+def lang_kb():
+    inline_kb_list = [
+        [InlineKeyboardButton(text="Русский", callback_data='ru')],
+        [InlineKeyboardButton(text="English", callback_data='en')]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
+
 def daily_kcal_kb(activity = None):
     inline_kb_list = [
     [InlineKeyboardButton(text=f"Отсутствие активности {"(выбрано)" if activity == 0 else ""}", callback_data="activity_0")],
