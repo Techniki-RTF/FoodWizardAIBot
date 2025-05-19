@@ -39,13 +39,13 @@ async def init_db():
         await db.commit()
         return db
 
-def get_db() -> Connection:
+async def get_db() -> Connection:
     if db is None:
         raise RuntimeError('Database connection failed.')
     return db
 
 async def create_user(uid):
-    c_db = get_db()
+    c_db = await get_db()
     await c_db.execute('''
             INSERT OR IGNORE INTO users (user_id)
             VALUES (?)
@@ -53,17 +53,17 @@ async def create_user(uid):
     await c_db.commit()
 
 async def change_goal(uid, goal):
-    c_db = get_db()
+    c_db = await get_db()
     await c_db.execute('UPDATE users SET goal = ? WHERE user_id = ?', (goal, uid))
     await c_db.commit()
 
 async def change_user_sex(uid, sex):
-    c_db = get_db()
+    c_db = await get_db()
     await c_db.execute('UPDATE users SET sex = ? WHERE user_id = ?', (sex, uid))
     await c_db.commit()
 
 async def get_profile(uid):
-    c_db = get_db()
+    c_db = await get_db()
     cursor = await c_db.execute('SELECT height, weight, age, sex, goal, bmi, activity, daily_kcal FROM users WHERE user_id = ?', (uid,))
     row = await cursor.fetchone()
     if row:
@@ -75,7 +75,7 @@ async def get_profile(uid):
     return profile
 
 async def change_param(uid, param, value):
-    c_db = get_db()
+    c_db = await get_db()
     await c_db.execute(f'UPDATE users SET {param.replace('c_', '', 1)} = ? WHERE user_id = ?', (value, uid))
     cursor = await c_db.execute('SELECT height, weight FROM users WHERE user_id = ?', (uid,))
     row = await cursor.fetchone()
@@ -88,11 +88,11 @@ async def change_param(uid, param, value):
     await c_db.commit()
 
 async def change_activity(uid, activity):
-    c_db = get_db()
+    c_db = await get_db()
     await c_db.execute('UPDATE users SET activity = ? WHERE user_id = ?', (activity, uid))
     await c_db.commit()
 
 async def change_daily_kcal(uid, kcal):
-    c_db = get_db()
+    c_db = await get_db()
     await c_db.execute('UPDATE users SET daily_kcal = ? WHERE user_id = ?', (kcal, uid))
     await c_db.commit()
