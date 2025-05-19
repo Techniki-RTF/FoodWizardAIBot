@@ -51,6 +51,17 @@ async def create_user(uid):
             VALUES (?)
             ''', (uid,))
     await c_db.commit()
+async def get_user_lang(uid):
+    c_db = await get_db()
+    cursor = await c_db.execute('SELECT lang FROM users WHERE user_id = ?', (uid,))
+    row = await cursor.fetchone()
+    lang = row[0] if row else None
+    return lang
+
+async def change_user_lang(uid, lang):
+    c_db = await get_db()
+    await c_db.execute('UPDATE users SET lang = ? WHERE user_id = ?', (lang, uid))
+    await c_db.commit()
 
 async def change_goal(uid, goal):
     c_db = await get_db()
