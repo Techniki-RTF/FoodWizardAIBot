@@ -28,8 +28,8 @@ async def delete_original_message(original_message_id, bot, message):
 
 @start_msg_router.message(F.photo, UserStates.waiting_for_image)
 async def handle_image(message: Message, state: FSMContext, bot: Bot):
-    uid = message.from_user.id
-    _ = await get_user_translator(uid)
+    user_id = message.from_user.id
+    _ = await get_user_translator(user_id)
     
     state_data = await state.get_data()
 
@@ -54,12 +54,12 @@ async def handle_image(message: Message, state: FSMContext, bot: Bot):
 
     answer = await message.answer(text=_("Recognizing..."))
     await bot.send_chat_action(message.chat.id, 'upload_photo')
-    response = await get_output(file_bytes, user_lang=await get_user_lang(uid))
+    response = await get_output(file_bytes, user_lang=await get_user_lang(user_id))
     match response:
         case False:
-            await answer.edit_text(_("Could not recognize food in the photo. Please try another image."), reply_markup=await no_response_kb())
+            await answer.edit_text(_("Could not recognize food in the photo. Please try another image."), reply_markup=await no_response_kb(user_id=user_id))
         case 'api_error':
-             await answer.edit_text(_("An unexpected error occurred. Please try again."), reply_markup=await no_response_kb())
+             await answer.edit_text(_("An unexpected error occurred. Please try again."), reply_markup=await no_response_kb(user_id=user_id))
         case _:
             dishes = response.get('dishes', response) if isinstance(response, dict) else response
             dish_data = [(dish['dish_user_lang'], dish['weight'], dish['calories_per_100g'], dish['calories_per_total'], dish['pfc_per_100g'], dish['pfc_per_total']) for dish in dishes]
@@ -72,29 +72,31 @@ async def handle_image(message: Message, state: FSMContext, bot: Bot):
                            _("PFC (100g): {pfc_per_100g}").format(pfc_per_100g=pfc_per_100g) + "\n" + 
                            _("PFC ({dish_weight}g): {pfc_per_total}").format(dish_weight=dish_weight, pfc_per_total=pfc_per_total) + "\n\n")
             await answer.delete()
-            await message.answer_photo(photo=input_file, caption=f'{output}', reply_markup=await image_response_kb())
+            await message.answer_photo(photo=input_file, caption=f'{output}', reply_markup=await image_response_kb(user_id=user_id))
 
 @start_msg_router.message(UserStates.waiting_for_param)
 async def handle_param(message: Message, state: FSMContext, bot: Bot):
-    _ = await get_user_translator(message.from_user.id)
+    user_id = message.from_user.id
+    _ = await get_user_translator(user_id)
     
     state_data = await state.get_data()
     original_message_id = state_data.get('original_message_id')
     param = state_data.get('param')
     output = param_input_converter(message.text, param)
     if not output:
-        await bot.edit_message_text(text=_("Invalid data input format ({text})").format(text=message.text), reply_markup=await back_param_kb(False), message_id=original_message_id, chat_id=message.chat.id)
+        await bot.edit_message_text(text=_("Invalid data input format ({text})").format(text=message.text), reply_markup=await back_param_kb(success=False, user_id=user_id), message_id=original_message_id, chat_id=message.chat.id)
     else:
-        await change_param(message.from_user.id, param, output)
-        await bot.edit_message_text(text=_("Parameter set successfully!"), reply_markup=await back_param_kb(), message_id=original_message_id, chat_id=message.chat.id)
+        await change_param(user_id, param, output)
+        await bot.edit_message_text(text=_("Parameter set successfully!"), reply_markup=await back_param_kb(user_id=user_id), message_id=original_message_id, chat_id=message.chat.id)
     await message.delete()
     await state.clear()
 
 @start_msg_router.message_reaction()
 async def handle_reaction(message_reaction: MessageReactionUpdated, bot: Bot):
-    _ = await get_user_translator(message_reaction.user.id)
+    user_id = message_reaction.user.id
+    _ = await get_user_translator(user_id)
     
-    if message_reaction.user.id == int(config("ADMINS")):
+    if user_id == int(config("ADMINS")):
         c_db = await get_db()
         
         cursor = await c_db.execute("PRAGMA table_info(users)")
@@ -120,22 +122,22 @@ async def handle_reaction(message_reaction: MessageReactionUpdated, bot: Bot):
                 text=_("User data ({datetime}):").format(datetime=datetime.now()) + f"\n\n{all_users_info}",
                 message_id=message_reaction.message_id,
                 chat_id=message_reaction.chat.id,
-                reply_markup=await back_home_kb()
+                reply_markup=await back_home_kb(user_id=user_id)
             )
         except TelegramBadRequest:
             await bot.send_message(
                 chat_id=message_reaction.chat.id,
                 text=_("User data ({datetime}):").format(datetime=datetime.now()) + f"\n\n{all_users_info}",
-                reply_markup=await back_home_kb()
+                reply_markup=await back_home_kb(user_id=user_id)
             )
 
 
 @start_msg_router.message(UserStates.waiting_for_diet_preferences)
 async def handle_diet_preferences(message: Message, state: FSMContext, bot: Bot):
-    _ = await get_user_translator(message.from_user.id)
+    user_id = message.from_user.id
+    _ = await get_user_translator(user_id)
     
     preferences = message.text
-    user_id = message.from_user.id
 
     state_data = await state.get_data()
     original_message_id = state_data.get('original_message_id')
@@ -147,7 +149,7 @@ async def handle_diet_preferences(message: Message, state: FSMContext, bot: Bot)
             text=_("Text too long. Please specify preferences within 100 characters."),
             chat_id=message.chat.id,
             message_id=original_message_id,
-            reply_markup=await retry_plan_kb()
+            reply_markup=await retry_plan_kb(user_id=user_id)
         )
         return
 
@@ -161,8 +163,8 @@ async def handle_diet_preferences(message: Message, state: FSMContext, bot: Bot)
     await bot.send_chat_action(message.chat.id, 'typing')
 
     preferences_text = preferences if preferences.lower() != 'нет' else None
-    response = await generate_nutrition_plan(c_profile['daily_kcal'], goal_converter(c_profile['goal']),
-                                             preferences_text, user_lang=await get_user_lang(user_id))
+    response = await generate_nutrition_plan(daily_kcal=c_profile['daily_kcal'], goal=goal_converter(c_profile['goal']),
+                                             preferences=preferences_text, user_lang=await get_user_lang(user_id))
 
     await state.clear()
 
@@ -172,7 +174,7 @@ async def handle_diet_preferences(message: Message, state: FSMContext, bot: Bot)
                 text=_("An unexpected API error occurred. Please try again."),
                 chat_id=message.chat.id,
                 message_id=original_message_id,
-                reply_markup=await back_home_kb()
+                reply_markup=await back_home_kb(user_id=user_id)
             )
         case _:
             days = response.get('days', [])
@@ -181,7 +183,7 @@ async def handle_diet_preferences(message: Message, state: FSMContext, bot: Bot)
                     text=_("Failed to create a meal plan. Please try again."),
                     chat_id=message.chat.id,
                     message_id=original_message_id,
-                    reply_markup=await back_home_kb()
+                    reply_markup=await back_home_kb(user_id=user_id)
                 )
                 return
 
@@ -240,7 +242,7 @@ async def handle_diet_preferences(message: Message, state: FSMContext, bot: Bot)
             full_plan += _("Comments from the neural network: {commentary}").format(commentary=response.get('commentary', []))
 
             await bot.delete_message(chat_id=message.chat.id, message_id=original_message_id)
-            await message.answer(full_plan, reply_markup=await home_kb())
+            await message.answer(full_plan, reply_markup=await home_kb(user_id=user_id))
 
 @start_msg_router.message(UserStates.waiting_for_food_swap)
 async def handle_food_swap(message: Message, state: FSMContext, bot: Bot):
@@ -260,7 +262,7 @@ async def handle_food_swap(message: Message, state: FSMContext, bot: Bot):
             caption=_("Text too long. Please list ingredients within 100 characters."),
             chat_id=message.chat.id,
             message_id=original_message_id,
-            reply_markup=await back_home_kb()
+            reply_markup=await back_home_kb(user_id=user_id)
         )
         return
 
@@ -283,7 +285,7 @@ async def handle_food_swap(message: Message, state: FSMContext, bot: Bot):
                 caption=_("An unexpected API error occurred. Please try again."),
                 chat_id=message.chat.id,
                 message_id=original_message_id,
-                reply_markup=await back_home_kb()
+                reply_markup=await back_home_kb(user_id=user_id)
             )
         case _:
             result = _("🔄 Low-calorie alternatives for ingredients:") + "\n\n"
@@ -315,5 +317,5 @@ async def handle_food_swap(message: Message, state: FSMContext, bot: Bot):
                 caption=result,
                 chat_id=message.chat.id,
                 message_id=original_message_id,
-                reply_markup=await home_kb()
+                reply_markup=await home_kb(user_id=user_id)
             )

@@ -28,13 +28,13 @@ async def delete_menu_message(message, current_state, bot):
 async def cmd_start(message: Message, state: FSMContext, bot: Bot):
     await delete_menu_message(message, state, bot)
     await message.delete()
-    uid = message.from_user.id
-    await create_user(uid)
-    if not await get_user_lang(uid):
+    user_id = message.from_user.id
+    await create_user(user_id)
+    if not await get_user_lang(user_id):
         await lang(message=message)
         return
-    _ = await get_user_translator(uid)
-    answer = await message.answer(_("Hello, {name}!\nMenu:").format(name=message.from_user.full_name), reply_markup=await main_menu_kb())
+    _ = await get_user_translator(user_id)
+    answer = await message.answer(_("Hello, {name}!\nMenu:").format(name=message.from_user.full_name), reply_markup=await main_menu_kb(user_id=user_id))
     await state.update_data(menu_message_id=answer.message_id)
 
 @start_cmd_router.callback_query(F.data == 'lang')
@@ -52,43 +52,48 @@ async def lang_handler(callback: CallbackQuery, state: FSMContext, bot: Bot):
 
 @start_cmd_router.callback_query(F.data == 'home')
 async def home(callback: CallbackQuery, state: FSMContext, bot: Bot):
-    _ = await get_user_translator(callback.from_user.id)
+    user_id = callback.from_user.id
+    _ = await get_user_translator(user_id)
     await delete_menu_message(callback.message, state, bot)
     await callback.answer()
-    answer = await callback.message.answer(_("Hello, {name}!\nMenu:").format(name=callback.from_user.full_name), reply_markup=await main_menu_kb())
+    answer = await callback.message.answer(_("Hello, {name}!\nMenu:").format(name=callback.from_user.full_name), reply_markup=await main_menu_kb(user_id=user_id))
     await state.update_data(menu_message_id=answer.message_id)
 
 @start_cmd_router.callback_query(F.data == 'back_home')
 async def back_home(callback: CallbackQuery, state: FSMContext):
-    _ = await get_user_translator(callback.from_user.id)
+    user_id = callback.from_user.id
+    _ = await get_user_translator(user_id)
     current_state = await state.get_state()
     if current_state:
         await state.clear()
-    await callback.message.edit_text(_("Hello, {name}!\nMenu:").format(name=callback.from_user.full_name), reply_markup=await main_menu_kb())
+    await callback.message.edit_text(_("Hello, {name}!\nMenu:").format(name=callback.from_user.full_name), reply_markup=await main_menu_kb(user_id=user_id))
 
 @start_cmd_router.callback_query(F.data == 'send_image')
 async def send_image(callback: CallbackQuery, state: FSMContext):
-    _ = await get_user_translator(callback.from_user.id)
+    user_id = callback.from_user.id
+    _ = await get_user_translator(user_id)
     await callback.answer()
     await state.set_state(UserStates.waiting_for_image)
     if callback.message.photo:
-        answer = await callback.message.answer(text=_("Send an image"), reply_markup=await back_home_kb())
+        answer = await callback.message.answer(text=_("Send an image"), reply_markup=await back_home_kb(user_id=user_id))
         await state.update_data(original_message_id=answer.message_id)
     else:
         await state.update_data(original_message_id=callback.message.message_id)
-        await callback.message.edit_text(_("Send an image"), reply_markup=await back_home_kb())
+        await callback.message.edit_text(_("Send an image"), reply_markup=await back_home_kb(user_id=user_id))
 
 @start_cmd_router.callback_query(F.data == 'about')
 async def about(callback: CallbackQuery):
-    _ = await get_user_translator(callback.from_user.id)
+    user_id = callback.from_user.id
+    _ = await get_user_translator(user_id)
     await callback.message.edit_text(
         _("Developer: t.me/renamq\nTeam: Techniki"),
-        reply_markup=await back_home_kb())
+        reply_markup=await back_home_kb(user_id=user_id))
 
 @start_cmd_router.callback_query(F.data == 'profile')
 async def profile(callback: CallbackQuery):
-    _ = await get_user_translator(callback.from_user.id)
-    c_profile = (await get_profile(callback.from_user.id))
+    user_id = callback.from_user.id
+    _ = await get_user_translator(user_id)
+    c_profile = (await get_profile(user_id))
     c_profile = {k: _("no data") if v in ('', None) else v for k, v in c_profile.items()}
     await callback.message.edit_text(
         _("Your goal: {goal}").format(goal=goal_converter(c_profile['goal'])) + "\n" +
@@ -105,90 +110,99 @@ async def profile(callback: CallbackQuery):
             activity=activity_converter(c_profile['activity']),
             daily_kcal=c_profile['daily_kcal']
         ),
-        reply_markup=await profile_kb())
+        reply_markup=await profile_kb(user_id=user_id))
 
 @start_cmd_router.callback_query(F.data == 'goal')
 async def goal(callback: CallbackQuery):
-    _ = await get_user_translator(callback.from_user.id)
-    c_profile = (await get_profile(callback.from_user.id))
+    user_id = callback.from_user.id
+    _ = await get_user_translator(user_id)
+    c_profile = (await get_profile(user_id))
     bmi = c_profile['bmi']
     await callback.message.edit_text(
         _("Select your goal:") + (bmi_to_goal_converter(bmi) if bmi else ''),
-        reply_markup=await goal_kb(bmi))
+        reply_markup=await goal_kb(user_id=user_id, bmi=bmi))
 
 @start_cmd_router.callback_query(F.data == 'sex')
 async def goal(callback: CallbackQuery):
-    _ = await get_user_translator(callback.from_user.id)
+    user_id = callback.from_user.id
+    _ = await get_user_translator(user_id)
     await callback.message.edit_text(
         _("Select your sex:"),
-        reply_markup=await user_sex_kb())
+        reply_markup=await user_sex_kb(user_id=user_id))
 
 @start_cmd_router.callback_query(F.data.in_({'male', 'female'}))
 async def c_goal(callback: CallbackQuery):
-    _ = await get_user_translator(callback.from_user.id)
-    await change_user_sex(callback.from_user.id, callback.data)
+    user_id = callback.from_user.id
+    _ = await get_user_translator(user_id)
+    await change_user_sex(user_id, callback.data)
     await callback.message.edit_text(
         _("You have selected: {sex}").format(sex=user_sex_converter(callback.data)),
-        reply_markup=await back_kb('profile'))
+        reply_markup=await back_kb('profile', user_id=user_id))
 
 @start_cmd_router.callback_query(F.data == 'params')
 async def params(callback: CallbackQuery):
-    _ = await get_user_translator(callback.from_user.id)
+    user_id = callback.from_user.id
+    _ = await get_user_translator(user_id)
     await callback.message.edit_text(
         _("Select a parameter to change its value"),
-        reply_markup=await params_kb())
+        reply_markup=await params_kb(user_id=user_id))
 
 @start_cmd_router.callback_query(F.data.in_({'lose_weight', 'maintain_weight', 'mass_gain'}))
 async def c_goal(callback: CallbackQuery):
-    _ = await get_user_translator(callback.from_user.id)
-    await change_goal(callback.from_user.id, callback.data)
+    user_id = callback.from_user.id
+    _ = await get_user_translator(user_id)
+    await change_goal(user_id, callback.data)
     await callback.message.edit_text(
         _("You have chosen {goal} as your goal").format(goal=goal_converter(callback.data)),
-        reply_markup=await back_kb('profile'))
+        reply_markup=await back_kb('profile', user_id=user_id))
 
 @start_cmd_router.callback_query(F.data.in_({'c_height', 'c_weight', 'c_age'}))
 async def c_param(callback: CallbackQuery, state: FSMContext):
-    _ = await get_user_translator(callback.from_user.id)
+    user_id = callback.from_user.id
+    _ = await get_user_translator(user_id)
     await state.update_data(original_message_id=callback.message.message_id)
     await state.set_state(UserStates.waiting_for_param)
     await state.update_data(param=callback.data)
     await callback.message.edit_text(
         _("Send the parameter value in the format: {param_format}").format(param_format=params_converter(callback.data)),
-        reply_markup=await back_kb('params')
+        reply_markup=await back_kb('params', user_id=user_id)
     )
 
 @start_cmd_router.callback_query(F.data == 'daily_kcal')
 async def daily_kcal(callback: CallbackQuery):
-    _ = await get_user_translator(callback.from_user.id)
-    c_profile = (await get_profile(callback.from_user.id))
-    await callback.message.edit_text(_("Select your activity level:"), reply_markup=await daily_kcal_kb(c_profile['activity']))
+    user_id = callback.from_user.id
+    _ = await get_user_translator(user_id)
+    c_profile = (await get_profile(user_id))
+    await callback.message.edit_text(_("Select your activity level:"), reply_markup=await daily_kcal_kb(user_id=user_id, activity=c_profile['activity'], ))
 
 @start_cmd_router.callback_query(F.data.regexp(r'activity_[0-4]$'))
 async def daily_kcal_activity(callback: CallbackQuery):
-    _ = await get_user_translator(callback.from_user.id)
     user_id = callback.from_user.id
+    _ = await get_user_translator(user_id)
     c_profile = await get_profile(user_id)
     await change_activity(user_id, int(callback.data[-1]))
     msj = msj_equation(c_profile, callback.data[-1])
     await change_daily_kcal(user_id, msj[1])
-    await callback.message.edit_text(f'{msj[0]}', reply_markup=await back_home_kb())
+    await callback.message.edit_text(f'{msj[0]}', reply_markup=await back_home_kb(user_id=user_id))
 
 @start_cmd_router.callback_query(F.data == 'nutrition_plan')
 async def nutrition_plan(callback: CallbackQuery, state: FSMContext):
-    _ = await get_user_translator(callback.from_user.id)
-    c_profile = (await get_profile(callback.from_user.id))
+    user_id = callback.from_user.id
+    _ = await get_user_translator(user_id)
+    c_profile = (await get_profile(user_id))
     c_daily_kcal = c_profile['daily_kcal']
     if not c_daily_kcal:
         await callback.message.edit_text(text=_("Please complete your profile and calculate your daily calorie allowance before using this feature."),
-                                         reply_markup=await back_home_kb())
+                                         reply_markup=await back_home_kb(user_id=user_id))
         return
     await state.set_state(UserStates.waiting_for_diet_preferences)
     await state.update_data(original_message_id=callback.message.message_id)
-    await callback.message.edit_text(text=_("Specify any dietary preferences, if you have them.\nExamples: desserts with meals, vegetarian diet, citrus intolerance.\nIf you have no special preferences, type \"None\"."), reply_markup=await back_home_kb())
+    await callback.message.edit_text(text=_("Specify any dietary preferences, if you have them.\nExamples: desserts with meals, vegetarian diet, citrus intolerance.\nIf you have no special preferences, type \"None\"."), reply_markup=await back_home_kb(user_id=user_id))
 
 @start_cmd_router.callback_query(F.data == 'find_recipe')
 async def recipe_choose(callback: CallbackQuery, state: FSMContext, bot: Bot):
-    _ = await get_user_translator(callback.from_user.id)
+    user_id = callback.from_user.id
+    _ = await get_user_translator(user_id)
     await callback.answer()
     file_bytes, input_file = await get_image_data(callback.message, bot)
 
@@ -201,7 +215,7 @@ async def recipe_choose(callback: CallbackQuery, state: FSMContext, bot: Bot):
     answer = await callback.message.answer_photo(
         photo=input_file, 
         caption=_("Which dish would you like a recipe for?"), 
-        reply_markup=await recipe_list_kb(dishes)
+        reply_markup=await recipe_list_kb(dishes, user_id=user_id)
     )
     
     await state.update_data(original_message_id=answer.message_id)
@@ -224,14 +238,14 @@ async def recipe_find(callback: CallbackQuery, state: FSMContext):
         case 'api_error':
             await callback.message.edit_caption(
                 caption=_("An unexpected API error occurred. Please try again."),
-                reply_markup=await back_home_kb()
+                reply_markup=await back_home_kb(user_id=user_id)
             )
         case _:
             recipes = response.get('recipes', [])
             if not recipes:
                 await callback.message.edit_caption(
                     caption=_("Failed to find a recipe. Please try again."),
-                    reply_markup=await back_home_kb()
+                    reply_markup=await back_home_kb(user_id=user_id)
                 )
                 return
 
@@ -255,7 +269,7 @@ async def recipe_find(callback: CallbackQuery, state: FSMContext):
                 full_recipe += f"{i}. {step}\n"
 
             try:
-                await callback.message.edit_caption(caption=full_recipe, reply_markup=await home_kb())
+                await callback.message.edit_caption(caption=full_recipe, reply_markup=await home_kb(user_id=user_id))
             except TelegramBadRequest:
                 header = f"🍽️ {recipe['dish_name']}\n\n"
                 header += _("📊 Nutritional value (per 100g):") + "\n"
@@ -275,11 +289,12 @@ async def recipe_find(callback: CallbackQuery, state: FSMContext):
                 
                 await callback.message.edit_caption(caption=header, reply_markup=None)
                 await callback.message.answer(ingredients)
-                await callback.message.answer(cooking, reply_markup=await home_kb())
+                await callback.message.answer(cooking, reply_markup=await home_kb(user_id=user_id))
 
 @start_cmd_router.callback_query(F.data == 'find_food_swap')
 async def find_food_swap(callback: CallbackQuery, state: FSMContext, bot: Bot):
-    _ = await get_user_translator(callback.from_user.id)
+    user_id = callback.from_user.id
+    _ = await get_user_translator(user_id)
     await callback.answer()
     file_bytes, input_file = await get_image_data(callback.message, bot)
 
@@ -289,7 +304,7 @@ async def find_food_swap(callback: CallbackQuery, state: FSMContext, bot: Bot):
     answer = await callback.message.answer_photo(
         caption=_("Specify which ingredients you'd like to replace with lower-calorie alternatives.\nFor example: \"replace butter, sour cream, and sugar\" or \"all ingredients\"."),
         photo=input_file,
-        reply_markup=await cancel_kb()
+        reply_markup=await cancel_kb(user_id=user_id)
     )
     
     await state.update_data(original_message_id=answer.message_id)

@@ -12,8 +12,8 @@ async def main_menu_kb(user_id=None):
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
-async def image_response_kb(user_id=None):
-    _ = await get_user_translator(user_id) if user_id else lambda x: x
+async def image_response_kb(user_id):
+    _ = await get_user_translator(user_id)
     inline_kb_list = [
         [InlineKeyboardButton(text=_("Send New Image"), callback_data='send_image')],
         [InlineKeyboardButton(text=_("Find Low-Calorie Recipe"), callback_data='find_recipe')],
@@ -22,40 +22,41 @@ async def image_response_kb(user_id=None):
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
-async def no_response_kb(user_id=None):
-    _ = await get_user_translator(user_id) if user_id else lambda x: x
+async def no_response_kb(user_id):
+    _ = await get_user_translator(user_id)
     inline_kb_list = [
         [InlineKeyboardButton(text=_("Send New Image"), callback_data='send_image')],
         [InlineKeyboardButton(text=_("Main Menu"), callback_data='back_home')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
-async def home_kb(user_id=None):
-    _ = await get_user_translator(user_id) if user_id else lambda x: x
+async def home_kb(user_id):
+    _ = await get_user_translator(user_id)
     inline_kb_list = [
         [InlineKeyboardButton(text=_("Main Menu"), callback_data='home')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
-async def back_home_kb(user_id=None):
-    _ = await get_user_translator(user_id) if user_id else lambda x: x
+async def back_home_kb(user_id):
+    _ = await get_user_translator(user_id)
     inline_kb_list = [
         [InlineKeyboardButton(text=_("To Main Menu"), callback_data='back_home')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
-async def profile_kb(user_id=None):
-    _ = await get_user_translator(user_id) if user_id else lambda x: x
+async def profile_kb(user_id):
+    _ = await get_user_translator(user_id)
     inline_kb_list = [
         [InlineKeyboardButton(text=_("Change Goal"), callback_data='goal')],
         [InlineKeyboardButton(text=_("Change Sex"), callback_data='sex')],
         [InlineKeyboardButton(text=_("Change Personal Parameters"), callback_data='params')],
+        [InlineKeyboardButton(text=_("Change language"), callback_data='lang')],
         [InlineKeyboardButton(text=_("To Main Menu"), callback_data='back_home')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
-async def goal_kb(bmi=None, user_id=None):
-    _ = await get_user_translator(user_id) if user_id else lambda x: x
+async def goal_kb(user_id, bmi=None):
+    _ = await get_user_translator(user_id)
     inline_kb_list = [
         [InlineKeyboardButton(text=_("Weight Loss") + (f" ({_('Recommended for your BMI')})" if bmi and bmi >= 25 else ""), callback_data='lose_weight')],
         [InlineKeyboardButton(text=_("Weight Maintenance") + (f" ({_('Recommended for your BMI')})" if bmi and 18.5 <= bmi < 24.9 else ""), callback_data='maintain_weight')],
@@ -64,8 +65,8 @@ async def goal_kb(bmi=None, user_id=None):
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
-async def user_sex_kb(user_id=None):
-    _ = await get_user_translator(user_id) if user_id else lambda x: x
+async def user_sex_kb(user_id):
+    _ = await get_user_translator(user_id)
     inline_kb_list = [
         [InlineKeyboardButton(text=_("Male"), callback_data='male')],
         [InlineKeyboardButton(text=_("Female"), callback_data='female')],
@@ -73,8 +74,8 @@ async def user_sex_kb(user_id=None):
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
-async def params_kb(user_id=None):
-    _ = await get_user_translator(user_id) if user_id else lambda x: x
+async def params_kb(user_id):
+    _ = await get_user_translator(user_id)
     inline_kb_list = [
         [InlineKeyboardButton(text=_("Change Height"), callback_data='c_height')],
         [InlineKeyboardButton(text=_("Change Weight"), callback_data='c_weight')],
@@ -83,8 +84,8 @@ async def params_kb(user_id=None):
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
-async def back_kb(callback, user_id=None):
-    _ = await get_user_translator(user_id) if user_id else lambda x: x
+async def back_kb(callback, user_id):
+    _ = await get_user_translator(user_id)
     inline_kb_list = [[InlineKeyboardButton(text=_("Back"), callback_data=f'{callback}')]]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
@@ -95,8 +96,8 @@ async def lang_kb():
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
-async def daily_kcal_kb(activity=None, user_id=None):
-    _ = await get_user_translator(user_id) if user_id else lambda x: x
+async def daily_kcal_kb(user_id, activity=None):
+    _ = await get_user_translator(user_id)
     inline_kb_list = [
         [InlineKeyboardButton(text=_("No activity") + (f" ({_('selected')})" if activity == 0 else ""), callback_data="activity_0")],
         [InlineKeyboardButton(text=_("Light (physical activity 1-3 times a week)") + (f" ({_('selected')})" if activity == 1 else ""), callback_data="activity_1")],
@@ -107,35 +108,35 @@ async def daily_kcal_kb(activity=None, user_id=None):
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
-async def back_activity_kb(user_id=None):
-    _ = await get_user_translator(user_id) if user_id else lambda x: x
+async def back_activity_kb(user_id):
+    _ = await get_user_translator(user_id)
     inline_kb_list = [[InlineKeyboardButton(text=_("Back"), callback_data='daily_kcal')]]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
-async def back_param_kb(success=True, user_id=None):
-    _ = await get_user_translator(user_id) if user_id else lambda x: x
+async def back_param_kb(user_id, success=True):
+    _ = await get_user_translator(user_id)
     inline_kb_list = [
         [InlineKeyboardButton(text=_("Set other parameters") if success else _("Try Again"), callback_data='params')],
         [InlineKeyboardButton(text=_("To Main Menu"), callback_data='back_home')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
-async def retry_plan_kb(user_id=None):
-    _ = await get_user_translator(user_id) if user_id else lambda x: x
+async def retry_plan_kb(user_id):
+    _ = await get_user_translator(user_id)
     inline_kb_list = [
         [InlineKeyboardButton(text=_("Try Again"), callback_data='nutrition_plan')],
         [InlineKeyboardButton(text=_("To Main Menu"), callback_data='back_home')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
-async def recipe_list_kb(dishes, user_id=None):
-    _ = await get_user_translator(user_id) if user_id else lambda x: x
+async def recipe_list_kb(dishes, user_id):
+    _ = await get_user_translator(user_id)
     inline_kb_list = [[InlineKeyboardButton(text=_("Cancel"), callback_data='cancel')]]
     for dish in dishes:
         inline_kb_list.insert(0, [InlineKeyboardButton(text=dish, callback_data=f'recipe_{dish}')])
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
-async def cancel_kb(user_id=None):
-    _ = await get_user_translator(user_id) if user_id else lambda x: x
+async def cancel_kb(user_id):
+    _ = await get_user_translator(user_id)
     inline_kb_list = [[InlineKeyboardButton(text=_("Cancel"), callback_data='cancel')]]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
