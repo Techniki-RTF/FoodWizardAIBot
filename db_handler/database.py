@@ -51,6 +51,7 @@ async def create_user(uid):
             VALUES (?)
             ''', (uid,))
     await c_db.commit()
+    
 async def get_user_lang(uid):
     c_db = await get_db()
     cursor = await c_db.execute('SELECT lang FROM users WHERE user_id = ?', (uid,))
@@ -81,7 +82,7 @@ async def get_profile(uid):
         height, weight, age, sex, goal, bmi, activity, daily_kcal = row
         if age: age = int(age)
     else:
-        height = weight = age = sex = goal = bmi = None
+        height = weight = age = sex = goal = bmi = activity = daily_kcal = None
     profile = {'height': height, 'weight': weight, 'age': age, 'sex': sex, 'goal': goal, 'bmi': bmi, 'activity': activity, 'daily_kcal': daily_kcal}
     return profile
 
