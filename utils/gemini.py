@@ -22,9 +22,10 @@ async def make_gemini_api_request(model, contents, config, max_attempts=3):
                 await asyncio.sleep(1)
             else:
                 return 'api_error'
+    return None
 
-async def recognize_dish(image_bytes):
-    contents = [types.Content(role="user", parts=[types.Part.from_text(text="Первый этап"), types.Part.from_bytes(data=image_bytes, mime_type="image/png")])]
+async def recognize_dish(image_bytes, user_lang):
+    contents = [types.Content(role="user", parts=[types.Part.from_text(text=f"ЯЗЫК ПОЛЬЗОВАТЕЛЯ: {user_lang}"), types.Part.from_text(text="Первый этап"), types.Part.from_bytes(data=image_bytes, mime_type="image/png")])]
     generate_content_config = types.GenerateContentConfig(
         response_mime_type="application/json", 
         response_schema=RECOGNITION_RESPONSE_SCHEMA, 
@@ -44,12 +45,12 @@ async def recognize_dish(image_bytes):
         return False
     return response
 
-async def generate_nutrition_plan(daily_kcal, goal, preferences=None):
+async def generate_nutrition_plan(daily_kcal, goal, user_lang, preferences=None):
     prompt_text = f"Дневная норма калорий: {daily_kcal}, цель: {goal}"
     if preferences:
         prompt_text += f", предпочтения: {preferences}"
     
-    contents = [types.Content(role="user", parts=[types.Part.from_text(text=prompt_text)])]
+    contents = [types.Content(role="user", parts=[types.Part.from_text(text=f"ЯЗЫК ПОЛЬЗОВАТЕЛЯ: {user_lang}"), types.Part.from_text(text=prompt_text)])]
     generate_content_config = types.GenerateContentConfig(
         response_mime_type="application/json", 
         response_schema=PLAN_RESPONSE_SCHEMA, 
@@ -70,9 +71,9 @@ async def generate_nutrition_plan(daily_kcal, goal, preferences=None):
     print(response)
     return response
 
-async def generate_recipe(dish, image_bytes):
+async def generate_recipe(dish, image_bytes, user_lang):
     prompt_text = f"Блюдо: {dish}"
-    contents = [types.Content(role="user", parts=[types.Part.from_text(text=prompt_text)]), types.Part.from_bytes(data=image_bytes, mime_type="image/png")]
+    contents = [types.Content(role="user", parts=[types.Part.from_text(text=f"ЯЗЫК ПОЛЬЗОВАТЕЛЯ: {user_lang}"), types.Part.from_text(text=prompt_text)]), types.Part.from_bytes(data=image_bytes, mime_type="image/png")]
     generate_content_config = types.GenerateContentConfig(
         response_mime_type="text/plain",
         system_instruction=RECIPE_SYSTEM_INSTRUCTION,
@@ -110,9 +111,9 @@ async def recipe_response_to_json(response):
     print(response)
     return response
 
-async def generate_food_swap(dishes, image_bytes):
+async def generate_food_swap(dishes, image_bytes, user_lang):
     prompt_text = f"Блюдо: {", ".join(dishes)}"
-    contents = [types.Content(role="user", parts=[types.Part.from_text(text=prompt_text)]), types.Part.from_bytes(data=image_bytes, mime_type="image/png")]
+    contents = [types.Content(role="user", parts=[types.Part.from_text(text=f"ЯЗЫК ПОЛЬЗОВАТЕЛЯ: {user_lang}"), types.Part.from_text(text=prompt_text)]), types.Part.from_bytes(data=image_bytes, mime_type="image/png")]
     generate_content_config = types.GenerateContentConfig(
         response_mime_type="application/json",
         system_instruction=FOOD_SWAP_SYSTEM_INSTRUCTION,

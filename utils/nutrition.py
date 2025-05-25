@@ -1,8 +1,8 @@
 from utils.gemini import recognize_dish
 from utils.calorie_ninjas import get_nutrition_info
 
-async def get_output(image_bytes):
-    gemini_output = await recognize_dish(image_bytes)
+async def get_output(image_bytes, user_lang):
+    gemini_output = await recognize_dish(image_bytes, user_lang=user_lang)
     print(f'gemini_output: {gemini_output}')
     
     if gemini_output == 'api_error' or gemini_output is False:

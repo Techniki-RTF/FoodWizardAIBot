@@ -208,14 +208,15 @@ async def recipe_choose(callback: CallbackQuery, state: FSMContext, bot: Bot):
 
 @start_cmd_router.callback_query(F.data.regexp(r'recipe_..*'))
 async def recipe_find(callback: CallbackQuery, state: FSMContext):
-    _ = await get_user_translator(callback.from_user.id)
+    user_id = callback.from_user.id
+    _ = await get_user_translator(user_id)
     state_data = await state.get_data()
     file_bytes = state_data.get('file_bytes')
 
     dish = callback.data.replace('recipe_', '')
 
     await callback.message.edit_caption(caption=_("Searching for a recipe..."), reply_markup=None)
-    response = await generate_recipe(dish, file_bytes)
+    response = await generate_recipe(dish, file_bytes, user_lang=await get_user_lang(user_id))
     
     await state.clear()
     

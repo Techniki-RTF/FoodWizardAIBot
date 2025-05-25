@@ -11,7 +11,7 @@ from states import UserStates
 from utils.converters import param_input_converter, goal_converter
 from utils.gemini import generate_nutrition_plan, generate_food_swap
 from utils.nutrition import get_output
-from db_handler.database import change_param, get_db, get_profile
+from db_handler.database import change_param, get_db, get_profile, get_user_lang
 from aiogram.exceptions import TelegramBadRequest
 from utils.locales import get_user_translator
 
@@ -28,7 +28,8 @@ async def delete_original_message(original_message_id, bot, message):
 
 @start_msg_router.message(F.photo, UserStates.waiting_for_image)
 async def handle_image(message: Message, state: FSMContext, bot: Bot):
-    _ = await get_user_translator(message.from_user.id)
+    uid = message.from_user.id
+    _ = await get_user_translator(uid)
     
     state_data = await state.get_data()
 
@@ -53,7 +54,7 @@ async def handle_image(message: Message, state: FSMContext, bot: Bot):
 
     answer = await message.answer(text=_("Recognizing..."))
     await bot.send_chat_action(message.chat.id, 'upload_photo')
-    response = await get_output(file_bytes)
+    response = await get_output(file_bytes, user_lang=await get_user_lang(uid))
     match response:
         case False:
             await answer.edit_text(_("Could not recognize food in the photo. Please try another image."), reply_markup=await no_response_kb())
@@ -61,7 +62,7 @@ async def handle_image(message: Message, state: FSMContext, bot: Bot):
              await answer.edit_text(_("An unexpected error occurred. Please try again."), reply_markup=await no_response_kb())
         case _:
             dishes = response.get('dishes', response) if isinstance(response, dict) else response
-            dish_data = [(dish['dish_ru'], dish['weight'], dish['calories_per_100g'], dish['calories_per_total'], dish['pfc_per_100g'], dish['pfc_per_total']) for dish in dishes]
+            dish_data = [(dish['dish_user_lang'], dish['weight'], dish['calories_per_100g'], dish['calories_per_total'], dish['pfc_per_100g'], dish['pfc_per_total']) for dish in dishes]
             output = ''
             for dish_name, dish_weight, dish_calories_per_100g, dish_total_calories, pfc_per_100g, pfc_per_total in dish_data:
                 output += (_("Dish name: {dish_name}").format(dish_name=dish_name) + "\n" + 
@@ -160,7 +161,8 @@ async def handle_diet_preferences(message: Message, state: FSMContext, bot: Bot)
     await bot.send_chat_action(message.chat.id, 'typing')
 
     preferences_text = preferences if preferences.lower() != 'нет' else None
-    response = await generate_nutrition_plan(c_profile['daily_kcal'], goal_converter(c_profile['goal']), preferences_text)
+    response = await generate_nutrition_plan(c_profile['daily_kcal'], goal_converter(c_profile['goal']),
+                                             preferences_text, user_lang=await get_user_lang(user_id))
 
     await state.clear()
 
@@ -242,7 +244,8 @@ async def handle_diet_preferences(message: Message, state: FSMContext, bot: Bot)
 
 @start_msg_router.message(UserStates.waiting_for_food_swap)
 async def handle_food_swap(message: Message, state: FSMContext, bot: Bot):
-    _ = await get_user_translator(message.from_user.id)
+    user_id = message.from_user.id
+    _ = await get_user_translator(user_id)
     
     food_to_swap = message.text
 
@@ -270,7 +273,7 @@ async def handle_food_swap(message: Message, state: FSMContext, bot: Bot):
 
     await bot.send_chat_action(message.chat.id, 'typing')
 
-    response = await generate_food_swap([food_to_swap], file_bytes)
+    response = await generate_food_swap([food_to_swap], file_bytes, user_lang=await get_user_lang(user_id))
 
     await state.clear()
 
