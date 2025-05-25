@@ -330,3 +330,6 @@ msgstr "Try Again"
 
 msgid "Cancel"
 msgstr "Cancel"
+
+msgid "Change language"
+msgstr "Change language"
