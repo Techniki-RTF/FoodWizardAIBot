@@ -1,23 +1,27 @@
 from re import match
+from utils.locales import get_user_translator
 
-def goal_converter(goal):
+async def goal_converter(goal, user_id):
+    _ = await get_user_translator(user_id)
     match goal:
-        case 'lose_weight': return "Похудение"
-        case 'maintain_weight': return "Поддержание веса"
-        case 'mass_gain': return "Набор массы"
+        case 'lose_weight': return _("Weight Loss")
+        case 'maintain_weight': return _("Weight Maintenance")
+        case 'mass_gain': return _("Mass Gain")
         case _: return goal
 
-def user_sex_converter(sex):
+async def user_sex_converter(sex, user_id):
+    _ = await get_user_translator(user_id)
     match sex:
-        case 'male': return 'Мужской'
-        case 'female': return 'Женский'
+        case 'male': return _('Male')
+        case 'female': return _('Female')
         case _: return sex
 
-def params_converter(param):
+async def params_converter(param, user_id):
+    _ = await get_user_translator(user_id)
     match param:
-        case 'c_height': return "181.5 (см)"
-        case 'c_weight': return "54.2 (кг)"
-        case 'c_age': return "19 (лет)"
+        case 'c_height': return _("181.5 (cm)")
+        case 'c_weight': return _("54.2 (kg)")
+        case 'c_age': return _("19 (years)")
         case _: return None
 
 def param_input_converter(user_input, param):
@@ -34,27 +38,30 @@ def param_input_converter(user_input, param):
             if not 14 <= user_input <= 120: return False
     return user_input
 
-def bmi_converter(bmi):
+async def bmi_converter(bmi, user_id):
+    _ = await get_user_translator(user_id)
     match bmi:
-        case _ if 0 < bmi < 18.5: return f'{bmi} - Недостаточный вес'
-        case _ if 18.5 <= bmi < 24.9: return f'{bmi} - Нормальный вес'
-        case _ if 25 <= bmi < 29.9: return f'{bmi} - Избыточный вес'
-        case _ if bmi >= 30: return f'{bmi} - Ожирение'
-        case _: return 'нет данных'
+        case _ if 0 < bmi < 18.5: return f'{bmi} - {_("Underweight")}'
+        case _ if 18.5 <= bmi < 24.9: return f'{bmi} - {_("Normal weight")}'
+        case _ if 25 <= bmi < 29.9: return f'{bmi} - {_("Overweight")}'
+        case _ if bmi >= 30: return f'{bmi} - {_("Obesity")}'
+        case _: return _('no data')
 
-def bmi_to_goal_converter(bmi):
-    string = f'\nПри вашем ИМТ {bmi} рекомендуемая цель - '
+async def bmi_to_goal_converter(bmi, user_id):
+    _ = await get_user_translator(user_id)
+    string = _('\nFor your BMI {bmi} the recommended goal is ').format(bmi=bmi)
     match bmi:
-        case _ if 0 < bmi < 18.5: return string + 'Набор массы'
-        case _ if 18.5 <= bmi < 24.9: return string + 'Поддержание веса'
-        case _ if bmi >= 25 : return string + 'Похудение'
+        case _ if 0 < bmi < 18.5: return string + _( "Mass Gain")
+        case _ if 18.5 <= bmi < 24.9: return string + _( "Weight Maintenance")
+        case _ if bmi >= 25 : return string + _( "Weight Loss")
         case _: return ''
 
-def activity_converter(activity):
+async def activity_converter(activity, user_id):
+    _ = await get_user_translator(user_id)
     match activity:
-        case 0: return 'Отсутствие активности'
-        case 1: return 'Лёгкая активность'
-        case 2: return 'Средняя активность'
-        case 3: return 'Высокая активность'
-        case 4: return 'Очень высокая активность'
-        case _: return 'нет данных'
+        case 0: return _('No activity')
+        case 1: return _('Light activity')
+        case 2: return _('Moderate activity')
+        case 3: return _('High activity')
+        case 4: return _('Very high activity')
+        case _: return _('no data')

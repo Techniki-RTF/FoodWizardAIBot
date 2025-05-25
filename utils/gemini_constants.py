@@ -2,6 +2,7 @@ from google import genai
 from google.genai import types
 
 RECOGNITION_SYSTEM_INSTRUCTION = """
+            Возвращай названия блюд на языке пользователя, указанного в запросе!
             Я буду отправлять фото еды, а ты должен распознать на фото еду и оценить примерный вес
             Если ты видишь, что несколько видов еды находятся в одной тарелке, то скорее всего это одно блюдо.
             Максимально подробно опиши блюдо. Например, если на тарелке есть салат, а сбоку лежат варёные яйца, 
@@ -20,11 +21,11 @@ RECOGNITION_RESPONSE_SCHEMA = genai.types.Schema(
             description = "An array of dishes with their nutritional information.",
             items = genai.types.Schema(
                 type = genai.types.Type.OBJECT,
-                required = ["dish_ru", "dish_en", "weight"],
+                required = ["dish_user_lang", "dish_en", "weight"],
                 properties = {
-                    "dish_ru": genai.types.Schema(
+                    "dish_user_lang": genai.types.Schema(
                         type=genai.types.Type.STRING,
-                        description="Name of the dish in russian",
+                        description="Name of the dish in user language",
                     ),
                     "dish_en": genai.types.Schema(
                         type=genai.types.Type.STRING,
@@ -41,6 +42,7 @@ RECOGNITION_RESPONSE_SCHEMA = genai.types.Schema(
 )
 
 PLAN_SYSTEM_INSTRUCTION = """
+        Возвращай названия блюд и описание на языке пользователя, указанного в запросе!
         Ты - ассистент в похудении/поддержании веса/наборе массы.
         Пользователь указывает свою цель и дневную норму калорий с учётом цели.
         Твоя задача - составить план питания на неделю.
@@ -56,7 +58,7 @@ meals_items = genai.types.Schema(
                             properties = {
                                 "dish_name": genai.types.Schema(
                                     type=genai.types.Type.STRING,
-                                    description="Name of the dish."
+                                    description="Name of the dish in user language."
                                 ),
                                 "description": genai.types.Schema(
                                     type=genai.types.Type.STRING,
@@ -97,7 +99,7 @@ PLAN_RESPONSE_SCHEMA = genai.types.Schema(
                 properties = {
                     "day_name": genai.types.Schema(
                         type=genai.types.Type.STRING,
-                        description = "Name of the day of the week in Russian, e.g., 'Понедельник', 'Вторник', etc.",
+                        description = "Name of the day of the week in user lang, e.g., 'Понедельник', 'Вторник' or 'Monday', 'Tuesday', etc.",
                     ),
                     "breakfast": genai.types.Schema(
                         type = genai.types.Type.ARRAY,
@@ -141,6 +143,7 @@ PLAN_RESPONSE_SCHEMA = genai.types.Schema(
 )
 
 RECIPE_SYSTEM_INSTRUCTION = """
+            Возвращай названия блюд, ингредиентов и сам рецепт на языке пользователя, указанного в запросе!
             Ты - ассистент в подборе питания.
             Тебе передано название блюда (или блюд) и его (их) фото.
             Твоя задача - найти низкокалорийный рецепт.
@@ -162,7 +165,7 @@ RECIPE_RESPONSE_SCHEMA = genai.types.Schema(
                 properties = {
                     "dish_name": genai.types.Schema(
                         type=genai.types.Type.STRING,
-                        description="Name of the low-calorie dish in Russian.",
+                        description="Name of the low-calorie dish in user language.",
                     ),
                     "ingredients": genai.types.Schema(
                         type=genai.types.Type.ARRAY,
@@ -210,6 +213,7 @@ RECIPE_RESPONSE_SCHEMA = genai.types.Schema(
 )
 
 FOOD_SWAP_SYSTEM_INSTRUCTION = """
+            Возвращай названия блюд и описание на языке пользователя, указанного в запросе!
             Ты - ассистент в подборе питания.
             Тебе передано название блюда (или блюд) и его (их) фото.
             Твоя задача - найти низкокалорийную замену для ингредиентов в блюде (блюдах).
