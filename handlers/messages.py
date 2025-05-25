@@ -163,7 +163,7 @@ async def handle_diet_preferences(message: Message, state: FSMContext, bot: Bot)
     await bot.send_chat_action(message.chat.id, 'typing')
 
     preferences_text = preferences if preferences.lower() != 'нет' else None
-    response = await generate_nutrition_plan(daily_kcal=c_profile['daily_kcal'], goal=goal_converter(c_profile['goal']),
+    response = await generate_nutrition_plan(daily_kcal=c_profile['daily_kcal'], goal=await goal_converter(c_profile['goal'], user_id),
                                              preferences=preferences_text, user_lang=await get_user_lang(user_id))
 
     await state.clear()

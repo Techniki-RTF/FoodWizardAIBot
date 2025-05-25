@@ -274,14 +274,14 @@ msgstr "Change Sex"
 msgid "Change Personal Parameters"
 msgstr "Change Personal Parameters"
 
-msgid "Weight Loss (Recommended for your BMI)"
-msgstr "Weight Loss (Recommended for your BMI)"
+msgid "Weight Loss"
+msgstr "Weight Loss"
 
-msgid "Weight Maintenance (Recommended for your BMI)"
-msgstr "Weight Maintenance (Recommended for your BMI)"
+msgid "Weight Maintenance"
+msgstr "Weight Maintenance"
 
-msgid "Mass Gain (Recommended for your BMI)"
-msgstr "Mass Gain (Recommended for your BMI)"
+msgid "Mass Gain"
+msgstr "Mass Gain"
 
 msgid "Back"
 msgstr "Back"
@@ -307,20 +307,20 @@ msgstr "Russian"
 msgid "English"
 msgstr "English"
 
-msgid "No activity (selected)"
-msgstr "No activity (selected)"
+msgid "No activity"
+msgstr "No activity"
 
-msgid "Light (physical activity 1-3 times a week) (selected)"
-msgstr "Light (physical activity 1-3 times a week) (selected)"
+msgid "Light (physical activity 1-3 times a week)"
+msgstr "Light (physical activity 1-3 times a week)"
 
-msgid "Moderate (physical activity 3-5 times a week) (selected)"
-msgstr "Moderate (physical activity 3-5 times a week) (selected)"
+msgid "Moderate (physical activity 3-5 times a week)"
+msgstr "Moderate (physical activity 3-5 times a week)"
 
-msgid "High (physical activity 6-7 times a week) (selected)"
-msgstr "High (physical activity 6-7 times a week) (selected)"
+msgid "High (physical activity 6-7 times a week)"
+msgstr "High (physical activity 6-7 times a week)"
 
-msgid "Very high (constant physical activity) (selected)"
-msgstr "Very high (constant physical activity) (selected)"
+msgid "Very high (constant physical activity)"
+msgstr "Very high (constant physical activity)"
 
 msgid "Set other parameters"
 msgstr "Set other parameters"
@@ -333,3 +333,49 @@ msgstr "Cancel"
 
 msgid "Change language"
 msgstr "Change language"
+
+msgid "181.5 (cm)"
+msgstr "181.5 (cm)"
+
+msgid "54.2 (kg)"
+msgstr "54.2 (kg)"
+
+msgid "19 (years)"
+msgstr "19 (years)"
+
+msgid "Underweight"
+msgstr "Underweight"
+
+msgid "Normal weight"
+msgstr "Normal weight"
+
+msgid "Overweight"
+msgstr "Overweight"
+
+msgid "Obesity"
+msgstr "Obesity"
+
+msgid ""
+"\n"
+"For your BMI {bmi} the recommended goal is "
+msgstr ""
+"\n"
+"For your BMI {bmi} the recommended goal is "
+
+msgid "Light activity"
+msgstr "Light activity"
+
+msgid "Moderate activity"
+msgstr "Moderate activity"
+
+msgid "High activity"
+msgstr "High activity"
+
+msgid "Very high activity"
+msgstr "Very high activity"
+
+msgid "Your daily calorie allowance: {bmr} kcal"
+msgstr "Your daily calorie allowance: {bmr} kcal"
+
+msgid "Recommended for your BMI"
+msgstr "Recommended for your BMI"

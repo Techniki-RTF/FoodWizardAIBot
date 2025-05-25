@@ -23,7 +23,7 @@ msgstr "Отправьте изображение"
 
 msgid ""
 "Developer: t.me/renamq\n"
-"Team: Техники"
+"Team: Techniki"
 msgstr ""
 "Разработчик: t.me/renamq\n"
 "Команда: Техники"
@@ -274,14 +274,14 @@ msgstr "Изменить пол"
 msgid "Change Personal Parameters"
 msgstr "Изменить личные параметры"
 
-msgid "Weight Loss (Recommended for your BMI)"
-msgstr "Похудение (Рекомендовано при вашем ИМТ)"
+msgid "Weight Loss"
+msgstr "Похудение"
 
-msgid "Weight Maintenance (Recommended for your BMI)"
-msgstr "Поддержание веса (Рекомендовано при вашем ИМТ)"
+msgid "Weight Maintenance"
+msgstr "Поддержание веса"
 
-msgid "Mass Gain (Recommended for your BMI)"
-msgstr "Набор массы (Рекомендовано при вашем ИМТ)"
+msgid "Mass Gain"
+msgstr "Набор массы"
 
 msgid "Back"
 msgstr "Назад"
@@ -307,20 +307,32 @@ msgstr "Русский"
 msgid "English"
 msgstr "English"
 
-msgid "No activity (selected)"
-msgstr "Отсутствие активности (выбрано)"
+msgid "No activity"
+msgstr "Отсутствие активности"
 
-msgid "Light (physical activity 1-3 times a week) (selected)"
-msgstr "Легкая (физ. нагрузки 1-3 раза в неделю) (выбрано)"
+msgid "Light (physical activity 1-3 times a week)"
+msgstr "Лёгкая (физ. нагрузки 1-3 раза в неделю)"
 
-msgid "Moderate (physical activity 3-5 times a week) (selected)"
-msgstr "Средняя (физ. нагрузки 3-5 раз в неделю) (выбрано)"
+msgid "Moderate (physical activity 3-5 times a week)"
+msgstr "Средняя (физ. нагрузки 3-5 раз в неделю)"
 
-msgid "High (physical activity 6-7 times a week) (selected)"
-msgstr "Высокая (физ. нагрузки 6-7 раз в неделю) (выбрано)"
+msgid "High (physical activity 6-7 times a week)"
+msgstr "Высокая (физ. нагрузки 6-7 раз в неделю)"
 
-msgid "Very high (constant physical activity) (selected)"
-msgstr "Очень высокая (постоянная физ. нагрузка) (выбрано)"
+msgid "Very high (constant physical activity)"
+msgstr "Очень высокая (постоянная физ. нагрузка)"
+
+msgid "Light activity"
+msgstr "Лёгкая активность"
+
+msgid "Moderate activity"
+msgstr "Средняя активность"
+
+msgid "High activity"
+msgstr "Высокая активность"
+
+msgid "Very high activity"
+msgstr "Очень высокая активность"
 
 msgid "Set other parameters"
 msgstr "Задать остальные параметры"
@@ -333,3 +345,34 @@ msgstr "Отмена"
 
 msgid "Change language"
 msgstr "Изменить язык"
+
+msgid "Recommended for your BMI"
+msgstr "Рекомендовано при вашем ИМТ"
+
+msgid "Underweight"
+msgstr "Недостаточный вес"
+
+msgid "Normal weight"
+msgstr "Нормальный вес"
+
+msgid "Overweight"
+msgstr "Избыточный вес"
+
+msgid "Obesity"
+msgstr "Ожирение"
+
+msgid ""
+"\n"
+"For your BMI {bmi} the recommended goal is "
+msgstr ""
+"\n"
+"При вашем ИМТ {bmi} рекомендуемая цель - "
+
+msgid "181.5 (cm)"
+msgstr "181.5 (см)"
+
+msgid "54.2 (kg)"
+msgstr "54.2 (кг)"
+
+msgid "19 (years)"
+msgstr "19 (лет)"

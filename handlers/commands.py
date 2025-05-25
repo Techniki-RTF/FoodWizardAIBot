@@ -96,18 +96,18 @@ async def profile(callback: CallbackQuery):
     c_profile = (await get_profile(user_id))
     c_profile = {k: _("no data") if v in ('', None) else v for k, v in c_profile.items()}
     await callback.message.edit_text(
-        _("Your goal: {goal}").format(goal=goal_converter(c_profile['goal'])) + "\n" +
-        _("Your sex: {sex}").format(sex=user_sex_converter(c_profile['sex'])) + "\n" +
+        _("Your goal: {goal}").format(goal=await goal_converter(c_profile['goal'], user_id)) + "\n" +
+        _("Your sex: {sex}").format(sex=await user_sex_converter(c_profile['sex'], user_id)) + "\n" +
         _("Your current parameters: {height} cm / {weight} kg / {age} years").format(
             height=c_profile['height'], 
             weight=c_profile['weight'], 
             age=c_profile['age']
         ) + "\n" +
         _("Your Body Mass Index (BMI): {bmi}").format(
-            bmi=bmi_converter(c_profile['bmi']) if type(c_profile['bmi']) in {float, int} else _("no data")
+            bmi=await bmi_converter(c_profile['bmi'], user_id) if type(c_profile['bmi']) in {float, int} else _( "no data")
         ) + "\n" +
         _("Your daily calorie allowance considering your activity level ({activity}): {daily_kcal}").format(
-            activity=activity_converter(c_profile['activity']),
+            activity=await activity_converter(c_profile['activity'], user_id),
             daily_kcal=c_profile['daily_kcal']
         ),
         reply_markup=await profile_kb(user_id=user_id))
@@ -119,7 +119,7 @@ async def goal(callback: CallbackQuery):
     c_profile = (await get_profile(user_id))
     bmi = c_profile['bmi']
     await callback.message.edit_text(
-        _("Select your goal:") + (bmi_to_goal_converter(bmi) if bmi else ''),
+        _( "Select your goal:") + (await bmi_to_goal_converter(bmi, user_id) if bmi else ''),
         reply_markup=await goal_kb(user_id=user_id, bmi=bmi))
 
 @start_cmd_router.callback_query(F.data == 'sex')
@@ -136,7 +136,7 @@ async def c_goal(callback: CallbackQuery):
     _ = await get_user_translator(user_id)
     await change_user_sex(user_id, callback.data)
     await callback.message.edit_text(
-        _("You have selected: {sex}").format(sex=user_sex_converter(callback.data)),
+        _("You have selected: {sex}").format(sex=await user_sex_converter(callback.data, user_id)),
         reply_markup=await back_kb('profile', user_id=user_id))
 
 @start_cmd_router.callback_query(F.data == 'params')
@@ -144,7 +144,7 @@ async def params(callback: CallbackQuery):
     user_id = callback.from_user.id
     _ = await get_user_translator(user_id)
     await callback.message.edit_text(
-        _("Select a parameter to change its value"),
+        _( "Select a parameter to change its value"),
         reply_markup=await params_kb(user_id=user_id))
 
 @start_cmd_router.callback_query(F.data.in_({'lose_weight', 'maintain_weight', 'mass_gain'}))
@@ -153,7 +153,7 @@ async def c_goal(callback: CallbackQuery):
     _ = await get_user_translator(user_id)
     await change_goal(user_id, callback.data)
     await callback.message.edit_text(
-        _("You have chosen {goal} as your goal").format(goal=goal_converter(callback.data)),
+        _("You have chosen {goal} as your goal").format(goal=await goal_converter(callback.data, user_id)),
         reply_markup=await back_kb('profile', user_id=user_id))
 
 @start_cmd_router.callback_query(F.data.in_({'c_height', 'c_weight', 'c_age'}))
@@ -164,7 +164,7 @@ async def c_param(callback: CallbackQuery, state: FSMContext):
     await state.set_state(UserStates.waiting_for_param)
     await state.update_data(param=callback.data)
     await callback.message.edit_text(
-        _("Send the parameter value in the format: {param_format}").format(param_format=params_converter(callback.data)),
+        _( "Send the parameter value in the format: {param_format}").format(param_format=await params_converter(callback.data, user_id)),
         reply_markup=await back_kb('params', user_id=user_id)
     )
 
@@ -178,10 +178,9 @@ async def daily_kcal(callback: CallbackQuery):
 @start_cmd_router.callback_query(F.data.regexp(r'activity_[0-4]$'))
 async def daily_kcal_activity(callback: CallbackQuery):
     user_id = callback.from_user.id
-    _ = await get_user_translator(user_id)
     c_profile = await get_profile(user_id)
     await change_activity(user_id, int(callback.data[-1]))
-    msj = msj_equation(c_profile, callback.data[-1])
+    msj = await msj_equation(c_profile, callback.data[-1], user_id)
     await change_daily_kcal(user_id, msj[1])
     await callback.message.edit_text(f'{msj[0]}', reply_markup=await back_home_kb(user_id=user_id))
 
@@ -311,8 +310,8 @@ async def find_food_swap(callback: CallbackQuery, state: FSMContext, bot: Bot):
 
 @start_cmd_router.callback_query(F.data == 'cancel')
 async def cancel_recipe(callback: CallbackQuery, state: FSMContext):
-    _ = await get_user_translator(callback.from_user.id)
     current_state = await state.get_state()
+    _ = await get_user_translator(callback.from_user.id)
     match current_state:
         case UserStates.waiting_for_recipe:
             await state.clear()
