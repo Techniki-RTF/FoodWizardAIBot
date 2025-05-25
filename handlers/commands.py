@@ -10,6 +10,7 @@ from states import UserStates
 from utils.converters import *
 from utils.gemini import generate_recipe
 from utils.image_data import get_image_data
+from utils.locales import get_user_translator
 from utils.msj_equation import msj_equation
 
 start_cmd_router = Router()
@@ -32,15 +33,16 @@ async def cmd_start(message: Message, state: FSMContext, bot: Bot):
     if not await get_user_lang(uid):
         await lang(message=message)
         return
-    answer = await message.answer(f'Привет, {message.from_user.full_name}!\nМеню:', reply_markup=main_menu_kb())
+    _ = await get_user_translator(uid)
+    answer = await message.answer(_("Hello, {name}!\nMenu:").format(name=message.from_user.full_name), reply_markup=await main_menu_kb())
     await state.update_data(menu_message_id=answer.message_id)
 
 @start_cmd_router.callback_query(F.data == 'lang')
 async def lang(callback: CallbackQuery = None, message: Message = None):
     if callback:
-        await callback.message.edit_text('Выбери язык / Choose your language', reply_markup=lang_kb())
+        await callback.message.edit_text('Выбери язык / Choose your language', reply_markup=await lang_kb())
     else:
-        await message.answer('Выбери язык / Choose your language', reply_markup=lang_kb())
+        await message.answer('Выбери язык / Choose your language', reply_markup=await lang_kb())
 
 @start_cmd_router.callback_query(F.data.in_({'ru', 'en'}))
 async def lang_handler(callback: CallbackQuery, state: FSMContext, bot: Bot):
@@ -50,121 +52,143 @@ async def lang_handler(callback: CallbackQuery, state: FSMContext, bot: Bot):
 
 @start_cmd_router.callback_query(F.data == 'home')
 async def home(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    _ = await get_user_translator(callback.from_user.id)
     await delete_menu_message(callback.message, state, bot)
     await callback.answer()
-    answer = await callback.message.answer(f'Привет, {callback.from_user.full_name}!\nМеню:', reply_markup=main_menu_kb())
+    answer = await callback.message.answer(_("Hello, {name}!\nMenu:").format(name=callback.from_user.full_name), reply_markup=await main_menu_kb())
     await state.update_data(menu_message_id=answer.message_id)
 
 @start_cmd_router.callback_query(F.data == 'back_home')
 async def back_home(callback: CallbackQuery, state: FSMContext):
+    _ = await get_user_translator(callback.from_user.id)
     current_state = await state.get_state()
     if current_state:
         await state.clear()
-    await callback.message.edit_text(f'Привет, {callback.from_user.full_name}!\nМеню:', reply_markup=main_menu_kb())
+    await callback.message.edit_text(_("Hello, {name}!\nMenu:").format(name=callback.from_user.full_name), reply_markup=await main_menu_kb())
 
 @start_cmd_router.callback_query(F.data == 'send_image')
 async def send_image(callback: CallbackQuery, state: FSMContext):
+    _ = await get_user_translator(callback.from_user.id)
     await callback.answer()
     await state.set_state(UserStates.waiting_for_image)
     if callback.message.photo:
-        answer = await callback.message.answer(text='Отправьте изображение', reply_markup=back_home_kb())
+        answer = await callback.message.answer(text=_("Send an image"), reply_markup=await back_home_kb())
         await state.update_data(original_message_id=answer.message_id)
     else:
         await state.update_data(original_message_id=callback.message.message_id)
-        await callback.message.edit_text('Отправьте изображение', reply_markup=back_home_kb())
+        await callback.message.edit_text(_("Send an image"), reply_markup=await back_home_kb())
 
 @start_cmd_router.callback_query(F.data == 'about')
 async def about(callback: CallbackQuery):
+    _ = await get_user_translator(callback.from_user.id)
     await callback.message.edit_text(
-        "Разработчик: t.me/renamq\n"
-             "Команда: Техники",
-             reply_markup=back_home_kb())
+        _("Developer: t.me/renamq\nTeam: Techniki"),
+        reply_markup=await back_home_kb())
 
 @start_cmd_router.callback_query(F.data == 'profile')
 async def profile(callback: CallbackQuery):
+    _ = await get_user_translator(callback.from_user.id)
     c_profile = (await get_profile(callback.from_user.id))
-    c_profile = {k: 'нет данных' if v in ('', None) else v for k, v in c_profile.items()}
+    c_profile = {k: _("no data") if v in ('', None) else v for k, v in c_profile.items()}
     await callback.message.edit_text(
-        f"Ваша цель: {goal_converter(c_profile['goal'])}\n"
-        f"Ваш пол: {user_sex_converter(c_profile['sex'])}\n"
-        f"Ваши текущие параметры: {c_profile['height']} см / {c_profile['weight']} кг / {c_profile['age']} лет\n"
-        f"Ваш индекс массы тела: {bmi_converter(c_profile['bmi']) if type(c_profile['bmi']) in {float, int}  else 'нет данных'}\n"
-        f"Ваша дневная норма калорий с учётом вашей активности ({activity_converter(c_profile['activity'])}): {c_profile['daily_kcal']}",
-        reply_markup=profile_kb())
+        _("Your goal: {goal}").format(goal=goal_converter(c_profile['goal'])) + "\n" +
+        _("Your sex: {sex}").format(sex=user_sex_converter(c_profile['sex'])) + "\n" +
+        _("Your current parameters: {height} cm / {weight} kg / {age} years").format(
+            height=c_profile['height'], 
+            weight=c_profile['weight'], 
+            age=c_profile['age']
+        ) + "\n" +
+        _("Your Body Mass Index (BMI): {bmi}").format(
+            bmi=bmi_converter(c_profile['bmi']) if type(c_profile['bmi']) in {float, int} else _("no data")
+        ) + "\n" +
+        _("Your daily calorie allowance considering your activity level ({activity}): {daily_kcal}").format(
+            activity=activity_converter(c_profile['activity']),
+            daily_kcal=c_profile['daily_kcal']
+        ),
+        reply_markup=await profile_kb())
 
 @start_cmd_router.callback_query(F.data == 'goal')
 async def goal(callback: CallbackQuery):
+    _ = await get_user_translator(callback.from_user.id)
     c_profile = (await get_profile(callback.from_user.id))
+    bmi = c_profile['bmi']
     await callback.message.edit_text(
-        f"Выберете цель:{bmi_to_goal_converter(c_profile['bmi'])}",
-        reply_markup=goal_kb(c_profile['bmi']))
+        _("Select your goal:") + (bmi_to_goal_converter(bmi) if bmi else ''),
+        reply_markup=await goal_kb(bmi))
 
 @start_cmd_router.callback_query(F.data == 'sex')
 async def goal(callback: CallbackQuery):
+    _ = await get_user_translator(callback.from_user.id)
     await callback.message.edit_text(
-        f"Выберете пол:",
-        reply_markup=user_sex_kb())
+        _("Select your sex:"),
+        reply_markup=await user_sex_kb())
 
 @start_cmd_router.callback_query(F.data.in_({'male', 'female'}))
 async def c_goal(callback: CallbackQuery):
+    _ = await get_user_translator(callback.from_user.id)
     await change_user_sex(callback.from_user.id, callback.data)
     await callback.message.edit_text(
-        f"Вы выбрали {user_sex_converter(callback.data)} пол",
-        reply_markup=back_kb('profile'))
+        _("You have selected: {sex}").format(sex=user_sex_converter(callback.data)),
+        reply_markup=await back_kb('profile'))
 
 @start_cmd_router.callback_query(F.data == 'params')
 async def params(callback: CallbackQuery):
+    _ = await get_user_translator(callback.from_user.id)
     await callback.message.edit_text(
-        f"Выберете параметр для изменения его значения",
-        reply_markup=params_kb())
+        _("Select a parameter to change its value"),
+        reply_markup=await params_kb())
 
 @start_cmd_router.callback_query(F.data.in_({'lose_weight', 'maintain_weight', 'mass_gain'}))
 async def c_goal(callback: CallbackQuery):
+    _ = await get_user_translator(callback.from_user.id)
     await change_goal(callback.from_user.id, callback.data)
     await callback.message.edit_text(
-        f"Вы выбрали {goal_converter(callback.data)} в качестве цели",
-        reply_markup=back_kb('profile'))
+        _("You have chosen {goal} as your goal").format(goal=goal_converter(callback.data)),
+        reply_markup=await back_kb('profile'))
 
 @start_cmd_router.callback_query(F.data.in_({'c_height', 'c_weight', 'c_age'}))
 async def c_param(callback: CallbackQuery, state: FSMContext):
+    _ = await get_user_translator(callback.from_user.id)
     await state.update_data(original_message_id=callback.message.message_id)
     await state.set_state(UserStates.waiting_for_param)
     await state.update_data(param=callback.data)
     await callback.message.edit_text(
-        f"Отправьте значение параметра в формате {params_converter(callback.data)}",
-        reply_markup=back_kb('params')
+        _("Send the parameter value in the format: {param_format}").format(param_format=params_converter(callback.data)),
+        reply_markup=await back_kb('params')
     )
 
 @start_cmd_router.callback_query(F.data == 'daily_kcal')
 async def daily_kcal(callback: CallbackQuery):
+    _ = await get_user_translator(callback.from_user.id)
     c_profile = (await get_profile(callback.from_user.id))
-    await callback.message.edit_text('Выберете ваш уровень активности:', reply_markup=daily_kcal_kb(c_profile['activity']))
+    await callback.message.edit_text(_("Select your activity level:"), reply_markup=await daily_kcal_kb(c_profile['activity']))
 
 @start_cmd_router.callback_query(F.data.regexp(r'activity_[0-4]$'))
 async def daily_kcal_activity(callback: CallbackQuery):
+    _ = await get_user_translator(callback.from_user.id)
     user_id = callback.from_user.id
     c_profile = await get_profile(user_id)
     await change_activity(user_id, int(callback.data[-1]))
     msj = msj_equation(c_profile, callback.data[-1])
     await change_daily_kcal(user_id, msj[1])
-    await callback.message.edit_text(f'{msj[0]}', reply_markup=back_home_kb())
+    await callback.message.edit_text(f'{msj[0]}', reply_markup=await back_home_kb())
 
 @start_cmd_router.callback_query(F.data == 'nutrition_plan')
 async def nutrition_plan(callback: CallbackQuery, state: FSMContext):
+    _ = await get_user_translator(callback.from_user.id)
     c_profile = (await get_profile(callback.from_user.id))
     c_daily_kcal = c_profile['daily_kcal']
     if not c_daily_kcal:
-        await callback.message.edit_text(text=f"Заполните профиль и рассчитайте вашу суточную норму калорий перед использованием этой функции",
-                                         reply_markup=back_home_kb())
+        await callback.message.edit_text(text=_("Please complete your profile and calculate your daily calorie allowance before using this feature."),
+                                         reply_markup=await back_home_kb())
         return
     await state.set_state(UserStates.waiting_for_diet_preferences)
     await state.update_data(original_message_id=callback.message.message_id)
-    await callback.message.edit_text(text="Укажите особые предпочтения в вашем рационе, если они есть\n"
-                                          "Примеры: десерты в приёмах пищи, вегетарианская диета, непереносимость цитрусовых\n"
-                                          "Если у вас нет особых предпочтений, напишите \"Нет\"", reply_markup=back_home_kb())
+    await callback.message.edit_text(text=_("Specify any dietary preferences, if you have them.\nExamples: desserts with meals, vegetarian diet, citrus intolerance.\nIf you have no special preferences, type \"None\"."), reply_markup=await back_home_kb())
 
 @start_cmd_router.callback_query(F.data == 'find_recipe')
 async def recipe_choose(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    _ = await get_user_translator(callback.from_user.id)
     await callback.answer()
     file_bytes, input_file = await get_image_data(callback.message, bot)
 
@@ -176,20 +200,21 @@ async def recipe_choose(callback: CallbackQuery, state: FSMContext, bot: Bot):
 
     answer = await callback.message.answer_photo(
         photo=input_file, 
-        caption='Для какого блюда найти рецепт?', 
-        reply_markup=recipe_list_kb(dishes)
+        caption=_("Which dish would you like a recipe for?"), 
+        reply_markup=await recipe_list_kb(dishes)
     )
     
     await state.update_data(original_message_id=answer.message_id)
 
 @start_cmd_router.callback_query(F.data.regexp(r'recipe_..*'))
 async def recipe_find(callback: CallbackQuery, state: FSMContext):
+    _ = await get_user_translator(callback.from_user.id)
     state_data = await state.get_data()
     file_bytes = state_data.get('file_bytes')
 
     dish = callback.data.replace('recipe_', '')
 
-    await callback.message.edit_caption(caption='Поиск рецепта в процессе', reply_markup=None)
+    await callback.message.edit_caption(caption=_("Searching for a recipe..."), reply_markup=None)
     response = await generate_recipe(dish, file_bytes)
     
     await state.clear()
@@ -197,15 +222,15 @@ async def recipe_find(callback: CallbackQuery, state: FSMContext):
     match response:
         case 'api_error':
             await callback.message.edit_caption(
-                caption='Произошла непредвиденная ошибка на стороне API, попробуйте ещё раз',
-                reply_markup=back_home_kb()
+                caption=_("An unexpected API error occurred. Please try again."),
+                reply_markup=await back_home_kb()
             )
         case _:
             recipes = response.get('recipes', [])
             if not recipes:
                 await callback.message.edit_caption(
-                    caption='Не удалось найти рецепт, попробуйте ещё раз',
-                    reply_markup=back_home_kb()
+                    caption=_("Failed to find a recipe. Please try again."),
+                    reply_markup=await back_home_kb()
                 )
                 return
 
@@ -213,46 +238,47 @@ async def recipe_find(callback: CallbackQuery, state: FSMContext):
 
             full_recipe = f"🍽️ {recipe['dish_name']}\n\n"
 
-            full_recipe += f"📊 Пищевая ценность (на 100г):\n"
-            full_recipe += f"🔸 Калории: {recipe['nutritional_info']['calories']} ккал\n"
-            full_recipe += f"🔸 Белки: {recipe['nutritional_info']['protein']}г\n"
-            full_recipe += f"🔸 Жиры: {recipe['nutritional_info']['fats']}г\n"
-            full_recipe += f"🔸 Углеводы: {recipe['nutritional_info']['carbs']}г\n\n"
+            full_recipe += _("📊 Nutritional value (per 100g):") + "\n"
+            full_recipe += _("🔸 Calories: {calories} kcal").format(calories=recipe['nutritional_info']['calories']) + "\n"
+            full_recipe += _("🔸 Protein: {protein}g").format(protein=recipe['nutritional_info']['protein']) + "\n"
+            full_recipe += _("🔸 Fats: {fats}g").format(fats=recipe['nutritional_info']['fats']) + "\n"
+            full_recipe += _("🔸 Carbohydrates: {carbs}g").format(carbs=recipe['nutritional_info']['carbs']) + "\n\n"
 
-            full_recipe += "📝 Ингредиенты:\n"
+            full_recipe += _("📝 Ingredients:") + "\n"
             for i, ingredient in enumerate(recipe['ingredients'], 1):
                 full_recipe += f"{i}. {ingredient}\n"
             full_recipe += "\n"
 
-            full_recipe += "👨‍🍳 Способ приготовления:\n"
+            full_recipe += _("👨‍🍳 Preparation method:") + "\n"
             for i, step in enumerate(recipe['recipe'], 1):
                 full_recipe += f"{i}. {step}\n"
 
             try:
-                await callback.message.edit_caption(caption=full_recipe, reply_markup=home_kb())
+                await callback.message.edit_caption(caption=full_recipe, reply_markup=await home_kb())
             except TelegramBadRequest:
                 header = f"🍽️ {recipe['dish_name']}\n\n"
-                header += f"📊 Пищевая ценность (на 100г):\n"
-                header += f"🔸 Калории: {recipe['nutritional_info']['calories']} ккал\n"
-                header += f"🔸 Белки: {recipe['nutritional_info']['protein']}г\n"
-                header += f"🔸 Жиры: {recipe['nutritional_info']['fats']}г\n"
-                header += f"🔸 Углеводы: {recipe['nutritional_info']['carbs']}г\n"
+                header += _("📊 Nutritional value (per 100g):") + "\n"
+                header += _("🔸 Calories: {calories} kcal").format(calories=recipe['nutritional_info']['calories']) + "\n"
+                header += _("🔸 Protein: {protein}g").format(protein=recipe['nutritional_info']['protein']) + "\n"
+                header += _("🔸 Fats: {fats}g").format(fats=recipe['nutritional_info']['fats']) + "\n"
+                header += _("🔸 Carbohydrates: {carbs}g").format(carbs=recipe['nutritional_info']['carbs']) + "\n"
                 
-                ingredients = "📝 Ингредиенты:\n"
+                ingredients = _("📝 Ingredients:") + "\n"
                 for i, ingredient in enumerate(recipe['ingredients'], 1):
                     if ingredient not in ['recipe', 'nutritional_info']:
                         ingredients += f"{i}. {ingredient}\n"
                 
-                cooking = "👨‍🍳 Способ приготовления:\n"
+                cooking = _("👨‍🍳 Preparation method:") + "\n"
                 for i, step in enumerate(recipe['recipe'], 1):
                     cooking += f"{i}. {step}\n"
                 
                 await callback.message.edit_caption(caption=header, reply_markup=None)
                 await callback.message.answer(ingredients)
-                await callback.message.answer(cooking, reply_markup=home_kb())
+                await callback.message.answer(cooking, reply_markup=await home_kb())
 
 @start_cmd_router.callback_query(F.data == 'find_food_swap')
 async def find_food_swap(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    _ = await get_user_translator(callback.from_user.id)
     await callback.answer()
     file_bytes, input_file = await get_image_data(callback.message, bot)
 
@@ -260,25 +286,25 @@ async def find_food_swap(callback: CallbackQuery, state: FSMContext, bot: Bot):
     await state.update_data(file_bytes=file_bytes)
     
     answer = await callback.message.answer_photo(
-        caption="Укажите, какие ингредиенты вы хотели бы заменить на более низкокалорийные альтернативы.\n"
-                "Например: \"заменить масло, сметану и сахар\" или \"все ингредиенты\"",
+        caption=_("Specify which ingredients you'd like to replace with lower-calorie alternatives.\nFor example: \"replace butter, sour cream, and sugar\" or \"all ingredients\"."),
         photo=input_file,
-        reply_markup=cancel_kb()
+        reply_markup=await cancel_kb()
     )
     
     await state.update_data(original_message_id=answer.message_id)
 
 @start_cmd_router.callback_query(F.data == 'cancel')
 async def cancel_recipe(callback: CallbackQuery, state: FSMContext):
+    _ = await get_user_translator(callback.from_user.id)
     current_state = await state.get_state()
     match current_state:
         case UserStates.waiting_for_recipe:
             await state.clear()
-            await callback.answer('Поиск рецепта отменен')
+            await callback.answer(_("Recipe search cancelled."))
             await callback.message.delete()
         case UserStates.waiting_for_food_swap:
             await state.clear()
-            await callback.answer('Поиск альтернатив отменен')
+            await callback.answer(_("Alternative search cancelled."))
             await callback.message.delete()
         case _:
             await callback.answer()
