@@ -64,13 +64,22 @@ async def handle_image(message: Message, state: FSMContext, bot: Bot):
             dishes = response.get('dishes', response) if isinstance(response, dict) else response
             dish_data = [(dish['dish_user_lang'], dish['weight'], dish['calories_per_100g'], dish['calories_per_total'], dish['pfc_per_100g'], dish['pfc_per_total']) for dish in dishes]
             output = ''
-            for dish_name, dish_weight, dish_calories_per_100g, dish_total_calories, pfc_per_100g, pfc_per_total in dish_data:
+            for dish_name, dish_weight, dish_calories_per_100g, dish_total_calories, pfc_per_100g_dict, pfc_per_total_dict in dish_data:
                 output += (_("Dish name: {dish_name}").format(dish_name=dish_name) + "\n" + 
                            _("Weight: {dish_weight}g").format(dish_weight=dish_weight) + "\n\n" +
                            _("Calories (100g): {dish_calories_per_100g} kcal").format(dish_calories_per_100g=dish_calories_per_100g) + "\n" + 
                            _("Calories ({dish_weight}g): {dish_total_calories} kcal").format(dish_weight=dish_weight, dish_total_calories=dish_total_calories) + "\n\n" +
-                           _("PFC (100g): {pfc_per_100g}").format(pfc_per_100g=pfc_per_100g) + "\n" + 
-                           _("PFC ({dish_weight}g): {pfc_per_total}").format(dish_weight=dish_weight, pfc_per_total=pfc_per_total) + "\n\n")
+                           _("PFC (100g): {protein}g / {fats}g / {carbs}g").format(
+                               protein=pfc_per_100g_dict['protein'],
+                               fats=pfc_per_100g_dict['fats'],
+                               carbs=pfc_per_100g_dict['carbs']
+                           ) + "\n" + 
+                           _("PFC ({dish_weight}g): {protein}g / {fats}g / {carbs}g").format(
+                               dish_weight=dish_weight,
+                               protein=pfc_per_total_dict['protein'],
+                               fats=pfc_per_total_dict['fats'],
+                               carbs=pfc_per_total_dict['carbs']
+                           ) + "\n\n")
             await answer.delete()
             try:
                 await message.answer_photo(photo=input_file, caption=f'{output}', reply_markup=await image_response_kb(user_id=user_id))

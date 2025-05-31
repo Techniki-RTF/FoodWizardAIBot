@@ -24,8 +24,16 @@ async def get_output(image_bytes, user_lang):
             carbs_per_100g = nutrition_info['items'][0]['carbohydrates_total_g']
             dishes_list[i]['calories_per_100g'] = int(calories_per_100g)
             dishes_list[i]['calories_per_total'] = int(dishes_list[i]['weight'] * calories_per_100g / 100)
-            dishes_list[i]['pfc_per_100g'] = f"{protein_per_100g} г / {fat_per_100g} г / {carbs_per_100g} г"
-            dishes_list[i]['pfc_per_total'] = f"{dishes_list[i]['weight'] * protein_per_100g / 100} г / {dishes_list[i]['weight'] * fat_per_100g / 100} г / {dishes_list[i]['weight'] * carbs_per_100g / 100} г"
+            dishes_list[i]['pfc_per_100g'] = {
+                'protein': round(protein_per_100g, 1),
+                'fats': round(fat_per_100g, 1),
+                'carbs': round(carbs_per_100g, 1)
+            }
+            dishes_list[i]['pfc_per_total'] = {
+                'protein': round(dishes_list[i]['weight'] * protein_per_100g / 100, 1),
+                'fats': round(dishes_list[i]['weight'] * fat_per_100g / 100, 1),
+                'carbs': round(dishes_list[i]['weight'] * carbs_per_100g / 100, 1)
+            }
         else:
             return False
 

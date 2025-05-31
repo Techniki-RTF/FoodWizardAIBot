@@ -376,3 +376,9 @@ msgstr "54.2 (кг)"
 
 msgid "19 (years)"
 msgstr "19 (лет)"
+
+msgid "PFC (100g): {protein}g / {fats}g / {carbs}g"
+msgstr "БЖУ (100г): {protein}г / {fats}г / {carbs}г"
+
+msgid "PFC ({dish_weight}g): {protein}g / {fats}g / {carbs}g"
+msgstr "БЖУ ({dish_weight}г): {protein}г / {fats}г / {carbs}г"
