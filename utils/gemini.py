@@ -33,7 +33,7 @@ async def recognize_dish(image_bytes, user_lang):
     )
     
     response = await make_gemini_api_request(
-        model="gemini-2.0-flash-lite",
+        model="gemini-2.5-flash-preview-05-20",
         contents=contents,
         config=generate_content_config
     )
@@ -58,7 +58,7 @@ async def generate_nutrition_plan(daily_kcal, goal, user_lang, preferences=None)
     )
     
     response = await make_gemini_api_request(
-        model="gemini-2.5-flash-preview-04-17",
+        model="gemini-2.5-flash-preview-05-20",
         contents=contents,
         config=generate_content_config
     )
@@ -81,7 +81,7 @@ async def generate_recipe(dish, image_bytes, user_lang):
     )
     
     response = await make_gemini_api_request(
-        model="gemini-2.5-flash-preview-04-17",
+        model="gemini-2.5-flash-preview-05-20",
         contents=contents,
         config=generate_content_config
     )
@@ -100,7 +100,7 @@ async def recipe_response_to_json(response):
     )
     
     response = await make_gemini_api_request(
-        model="gemini-2.5-flash-preview-04-17",
+        model="gemini-2.5-flash-preview-05-20",
         contents=contents,
         config=generate_content_config
     )
@@ -121,7 +121,7 @@ async def generate_food_swap(dishes, image_bytes, user_lang):
     )
     
     response = await make_gemini_api_request(
-        model="gemini-2.5-flash-preview-04-17",
+        model="gemini-2.5-flash-preview-05-20",
         contents=contents,
         config=generate_content_config
     )
