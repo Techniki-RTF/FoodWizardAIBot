@@ -72,8 +72,11 @@ async def handle_image(message: Message, state: FSMContext, bot: Bot):
                            _("PFC (100g): {pfc_per_100g}").format(pfc_per_100g=pfc_per_100g) + "\n" + 
                            _("PFC ({dish_weight}g): {pfc_per_total}").format(dish_weight=dish_weight, pfc_per_total=pfc_per_total) + "\n\n")
             await answer.delete()
-            await message.answer_photo(photo=input_file, caption=f'{output}', reply_markup=await image_response_kb(user_id=user_id))
-
+            try:
+                await message.answer_photo(photo=input_file, caption=f'{output}', reply_markup=await image_response_kb(user_id=user_id))
+            except TelegramBadRequest:
+                answer = await message.answer_photo(photo=input_file)
+                await answer.reply(text=f'{output}', reply_markup=await image_response_kb(user_id=user_id))
 @start_msg_router.message(UserStates.waiting_for_param)
 async def handle_param(message: Message, state: FSMContext, bot: Bot):
     user_id = message.from_user.id
