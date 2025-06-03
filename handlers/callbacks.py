@@ -14,7 +14,7 @@ from utils.locales import get_user_translator
 from utils.msj_equation import msj_equation
 from utils.exceptions import GeminiApiError
 
-start_cmd_router = Router()
+start_callback_router = Router()
 
 async def delete_menu_message(message, current_state, bot):
     data = await current_state.get_data()
@@ -25,7 +25,7 @@ async def delete_menu_message(message, current_state, bot):
         except TelegramBadRequest:
             pass
 
-@start_cmd_router.message(CommandStart())
+@start_callback_router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext, bot: Bot):
     await delete_menu_message(message, state, bot)
     await message.delete()
@@ -38,20 +38,20 @@ async def cmd_start(message: Message, state: FSMContext, bot: Bot):
     answer = await message.answer(_("Hello, {name}!\nMenu:").format(name=message.from_user.full_name), reply_markup=await main_menu_kb(user_id=user_id))
     await state.update_data(menu_message_id=answer.message_id)
 
-@start_cmd_router.callback_query(F.data == 'lang')
+@start_callback_router.callback_query(F.data == 'lang')
 async def lang(callback: CallbackQuery = None, message: Message = None):
     if callback:
         await callback.message.edit_text('Выбери язык / Choose your language', reply_markup=await lang_kb())
     else:
         await message.answer('Выбери язык / Choose your language', reply_markup=await lang_kb())
 
-@start_cmd_router.callback_query(F.data.in_({'ru', 'en'}))
+@start_callback_router.callback_query(F.data.in_({'ru', 'en'}))
 async def lang_handler(callback: CallbackQuery, state: FSMContext, bot: Bot):
     await change_user_lang(callback.from_user.id, callback.data)
     await callback.message.delete()
     await home(callback, state, bot)
 
-@start_cmd_router.callback_query(F.data == 'home')
+@start_callback_router.callback_query(F.data == 'home')
 async def home(callback: CallbackQuery, state: FSMContext, bot: Bot):
     user_id = callback.from_user.id
     _ = await get_user_translator(user_id)
@@ -60,7 +60,7 @@ async def home(callback: CallbackQuery, state: FSMContext, bot: Bot):
     answer = await callback.message.answer(_("Hello, {name}!\nMenu:").format(name=callback.from_user.full_name), reply_markup=await main_menu_kb(user_id=user_id))
     await state.update_data(menu_message_id=answer.message_id)
 
-@start_cmd_router.callback_query(F.data == 'back_home')
+@start_callback_router.callback_query(F.data == 'back_home')
 async def back_home(callback: CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
     _ = await get_user_translator(user_id)
@@ -69,7 +69,7 @@ async def back_home(callback: CallbackQuery, state: FSMContext):
         await state.clear()
     await callback.message.edit_text(_("Hello, {name}!\nMenu:").format(name=callback.from_user.full_name), reply_markup=await main_menu_kb(user_id=user_id))
 
-@start_cmd_router.callback_query(F.data == 'send_image')
+@start_callback_router.callback_query(F.data == 'send_image')
 async def send_image(callback: CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
     _ = await get_user_translator(user_id)
@@ -82,7 +82,7 @@ async def send_image(callback: CallbackQuery, state: FSMContext):
         await state.update_data(original_message_id=callback.message.message_id)
         await callback.message.edit_text(_("Send an image"), reply_markup=await back_home_kb(user_id=user_id))
 
-@start_cmd_router.callback_query(F.data == 'about')
+@start_callback_router.callback_query(F.data == 'about')
 async def about(callback: CallbackQuery):
     user_id = callback.from_user.id
     _ = await get_user_translator(user_id)
@@ -90,7 +90,7 @@ async def about(callback: CallbackQuery):
         _("Developer: t.me/renamq\nTeam: Techniki"),
         reply_markup=await back_home_kb(user_id=user_id))
 
-@start_cmd_router.callback_query(F.data == 'profile')
+@start_callback_router.callback_query(F.data == 'profile')
 async def profile(callback: CallbackQuery):
     user_id = callback.from_user.id
     _ = await get_user_translator(user_id)
@@ -113,7 +113,7 @@ async def profile(callback: CallbackQuery):
         ),
         reply_markup=await profile_kb(user_id=user_id))
 
-@start_cmd_router.callback_query(F.data == 'goal')
+@start_callback_router.callback_query(F.data == 'goal')
 async def goal(callback: CallbackQuery):
     user_id = callback.from_user.id
     _ = await get_user_translator(user_id)
@@ -123,7 +123,7 @@ async def goal(callback: CallbackQuery):
         _( "Select your goal:") + (await bmi_to_goal_converter(bmi, user_id) if bmi else ''),
         reply_markup=await goal_kb(user_id=user_id, bmi=bmi))
 
-@start_cmd_router.callback_query(F.data == 'sex')
+@start_callback_router.callback_query(F.data == 'sex')
 async def goal(callback: CallbackQuery):
     user_id = callback.from_user.id
     _ = await get_user_translator(user_id)
@@ -131,7 +131,7 @@ async def goal(callback: CallbackQuery):
         _("Select your sex:"),
         reply_markup=await user_sex_kb(user_id=user_id))
 
-@start_cmd_router.callback_query(F.data.in_({'male', 'female'}))
+@start_callback_router.callback_query(F.data.in_({'male', 'female'}))
 async def c_goal(callback: CallbackQuery):
     user_id = callback.from_user.id
     _ = await get_user_translator(user_id)
@@ -140,7 +140,7 @@ async def c_goal(callback: CallbackQuery):
         _("You have selected: {sex}").format(sex=await user_sex_converter(callback.data, user_id)),
         reply_markup=await back_kb('profile', user_id=user_id))
 
-@start_cmd_router.callback_query(F.data == 'params')
+@start_callback_router.callback_query(F.data == 'params')
 async def params(callback: CallbackQuery):
     user_id = callback.from_user.id
     _ = await get_user_translator(user_id)
@@ -148,7 +148,7 @@ async def params(callback: CallbackQuery):
         _( "Select a parameter to change its value"),
         reply_markup=await params_kb(user_id=user_id))
 
-@start_cmd_router.callback_query(F.data.in_({'lose_weight', 'maintain_weight', 'mass_gain'}))
+@start_callback_router.callback_query(F.data.in_({'lose_weight', 'maintain_weight', 'mass_gain'}))
 async def c_goal(callback: CallbackQuery):
     user_id = callback.from_user.id
     _ = await get_user_translator(user_id)
@@ -157,7 +157,7 @@ async def c_goal(callback: CallbackQuery):
         _("You have chosen {goal} as your goal").format(goal=await goal_converter(callback.data, user_id)),
         reply_markup=await back_kb('profile', user_id=user_id))
 
-@start_cmd_router.callback_query(F.data.in_({'c_height', 'c_weight', 'c_age'}))
+@start_callback_router.callback_query(F.data.in_({'c_height', 'c_weight', 'c_age'}))
 async def c_param(callback: CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
     _ = await get_user_translator(user_id)
@@ -169,14 +169,14 @@ async def c_param(callback: CallbackQuery, state: FSMContext):
         reply_markup=await back_kb('params', user_id=user_id)
     )
 
-@start_cmd_router.callback_query(F.data == 'daily_kcal')
+@start_callback_router.callback_query(F.data == 'daily_kcal')
 async def daily_kcal(callback: CallbackQuery):
     user_id = callback.from_user.id
     _ = await get_user_translator(user_id)
     c_profile = (await get_profile(user_id))
     await callback.message.edit_text(_("Select your activity level:"), reply_markup=await daily_kcal_kb(user_id=user_id, activity=c_profile['activity'], ))
 
-@start_cmd_router.callback_query(F.data.regexp(r'activity_[0-4]$'))
+@start_callback_router.callback_query(F.data.regexp(r'activity_[0-4]$'))
 async def daily_kcal_activity(callback: CallbackQuery):
     user_id = callback.from_user.id
     c_profile = await get_profile(user_id)
@@ -185,7 +185,7 @@ async def daily_kcal_activity(callback: CallbackQuery):
     await change_daily_kcal(user_id, msj[1])
     await callback.message.edit_text(f'{msj[0]}', reply_markup=await back_home_kb(user_id=user_id))
 
-@start_cmd_router.callback_query(F.data == 'nutrition_plan')
+@start_callback_router.callback_query(F.data == 'nutrition_plan')
 async def nutrition_plan(callback: CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
     _ = await get_user_translator(user_id)
@@ -199,7 +199,7 @@ async def nutrition_plan(callback: CallbackQuery, state: FSMContext):
     await state.update_data(original_message_id=callback.message.message_id)
     await callback.message.edit_text(text=_("Specify any dietary preferences, if you have them.\nExamples: desserts with meals, vegetarian diet, citrus intolerance.\nIf you have no special preferences, type \"None\"."), reply_markup=await back_home_kb(user_id=user_id))
 
-@start_cmd_router.callback_query(F.data == 'find_recipe')
+@start_callback_router.callback_query(F.data == 'find_recipe')
 async def recipe_choose(callback: CallbackQuery, state: FSMContext, bot: Bot):
     user_id = callback.from_user.id
     _ = await get_user_translator(user_id)
@@ -220,7 +220,7 @@ async def recipe_choose(callback: CallbackQuery, state: FSMContext, bot: Bot):
     
     await state.update_data(original_message_id=answer.message_id)
 
-@start_cmd_router.callback_query(F.data.regexp(r'recipe_..*'))
+@start_callback_router.callback_query(F.data.regexp(r'recipe_..*'))
 async def recipe_find(callback: CallbackQuery, state: FSMContext, bot: Bot):
     user_id = callback.from_user.id
     _ = await get_user_translator(user_id)
@@ -290,7 +290,7 @@ async def recipe_find(callback: CallbackQuery, state: FSMContext, bot: Bot):
     
     await state.clear()
 
-@start_cmd_router.callback_query(F.data == 'find_food_swap')
+@start_callback_router.callback_query(F.data == 'find_food_swap')
 async def find_food_swap(callback: CallbackQuery, state: FSMContext, bot: Bot):
     user_id = callback.from_user.id
     _ = await get_user_translator(user_id)
@@ -308,7 +308,7 @@ async def find_food_swap(callback: CallbackQuery, state: FSMContext, bot: Bot):
     
     await state.update_data(original_message_id=answer.message_id)
 
-@start_cmd_router.callback_query(F.data == 'cancel')
+@start_callback_router.callback_query(F.data == 'cancel')
 async def cancel_recipe(callback: CallbackQuery, state: FSMContext):
     current_state = await state.get_state()
     _ = await get_user_translator(callback.from_user.id)
