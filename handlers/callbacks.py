@@ -1,6 +1,5 @@
 from aiogram import Router, F, Bot
 from aiogram.exceptions import TelegramBadRequest
-from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 
@@ -9,25 +8,13 @@ from keyboards.inline_keyboard import *
 from states import UserStates
 from utils.converters import *
 from utils.delete_menu_message import delete_menu_message
+from utils.exceptions import GeminiApiError
 from utils.gemini import generate_recipe
 from utils.image_data import get_image_data
 from utils.locales import get_user_translator
 from utils.msj_equation import msj_equation
-from utils.exceptions import GeminiApiError
 
 start_callback_router = Router()
-@start_callback_router.message(CommandStart())
-async def cmd_start(message: Message, state: FSMContext, bot: Bot):
-    await delete_menu_message(message, state, bot)
-    await message.delete()
-    user_id = message.from_user.id
-    await create_user(user_id)
-    if not await get_user_lang(user_id):
-        await lang(message=message)
-        return
-    _ = await get_user_translator(user_id)
-    answer = await message.answer(_("Hello, {name}!\nMenu:").format(name=message.from_user.full_name), reply_markup=await main_menu_kb(user_id=user_id))
-    await state.update_data(menu_message_id=answer.message_id)
 
 @start_callback_router.callback_query(F.data == 'lang')
 async def lang(callback: CallbackQuery = None, message: Message = None):
