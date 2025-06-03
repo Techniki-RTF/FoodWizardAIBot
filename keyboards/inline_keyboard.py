@@ -57,10 +57,16 @@ async def profile_kb(user_id):
 
 async def goal_kb(user_id, bmi=None):
     _ = await get_user_translator(user_id)
+    
+    try:
+        bmi_value = float(bmi) if bmi else None
+    except (ValueError, TypeError):
+        bmi_value = None
+    
     inline_kb_list = [
-        [InlineKeyboardButton(text=_("Weight Loss") + (f" ({_('Recommended for your BMI')})" if bmi and bmi >= 25 else ""), callback_data='lose_weight')],
-        [InlineKeyboardButton(text=_("Weight Maintenance") + (f" ({_('Recommended for your BMI')})" if bmi and 18.5 <= bmi < 24.9 else ""), callback_data='maintain_weight')],
-        [InlineKeyboardButton(text=_("Mass Gain") + (f" ({_('Recommended for your BMI')})" if bmi and 0 < bmi < 18.5 else ""), callback_data='mass_gain')],
+        [InlineKeyboardButton(text=_("Weight Loss") + (f" ({_('Recommended for your BMI')})" if bmi_value and bmi_value >= 25 else ""), callback_data='lose_weight')],
+        [InlineKeyboardButton(text=_("Weight Maintenance") + (f" ({_('Recommended for your BMI')})" if bmi_value and 18.5 <= bmi_value < 24.9 else ""), callback_data='maintain_weight')],
+        [InlineKeyboardButton(text=_("Mass Gain") + (f" ({_('Recommended for your BMI')})" if bmi_value and 0 < bmi_value < 18.5 else ""), callback_data='mass_gain')],
         [InlineKeyboardButton(text=_("Back"), callback_data='profile')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)

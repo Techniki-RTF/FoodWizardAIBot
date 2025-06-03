@@ -38,23 +38,47 @@ def param_input_converter(user_input, param):
             if not 14 <= user_input <= 120: return False
     return user_input
 
+
 async def bmi_converter(bmi, user_id):
     _ = await get_user_translator(user_id)
-    match bmi:
-        case _ if 0 < bmi < 18.5: return f'{bmi} - {_("Underweight")}'
-        case _ if 18.5 <= bmi < 24.9: return f'{bmi} - {_("Normal weight")}'
-        case _ if 25 <= bmi < 29.9: return f'{bmi} - {_("Overweight")}'
-        case _ if bmi >= 30: return f'{bmi} - {_("Obesity")}'
-        case _: return _('no data')
+
+    try:
+        bmi_value = float(bmi) if bmi else 0
+    except (ValueError, TypeError):
+        return _('no data')
+
+    match bmi_value:
+        case _ if bmi_value < 18.5:
+            return f'{bmi} - {_("Underweight")}'
+        case _ if 18.5 <= bmi_value < 24.9:
+            return f'{bmi} - {_("Normal weight")}'
+        case _ if 25 <= bmi_value < 29.9:
+            return f'{bmi} - {_("Overweight")}'
+        case _ if bmi_value >= 30:
+            return f'{bmi} - {_("Obesity")}'
+        case _:
+            return _('no data')
+
 
 async def bmi_to_goal_converter(bmi, user_id):
     _ = await get_user_translator(user_id)
+
+    try:
+        bmi_value = float(bmi) if bmi else 0
+    except (ValueError, TypeError):
+        return ''
+
     string = _('\nFor your BMI {bmi} the recommended goal is ').format(bmi=bmi)
-    match bmi:
-        case _ if 0 < bmi < 18.5: return string + _( "Mass Gain")
-        case _ if 18.5 <= bmi < 24.9: return string + _( "Weight Maintenance")
-        case _ if bmi >= 25 : return string + _( "Weight Loss")
-        case _: return ''
+    match bmi_value:
+        case _ if 0 < bmi_value < 18.5:
+            return string + _("Mass Gain")
+        case _ if 18.5 <= bmi_value < 24.9:
+            return string + _("Weight Maintenance")
+        case _ if bmi_value >= 25:
+            return string + _("Weight Loss")
+        case _:
+            return ''
+
 
 async def activity_converter(activity, user_id):
     _ = await get_user_translator(user_id)
