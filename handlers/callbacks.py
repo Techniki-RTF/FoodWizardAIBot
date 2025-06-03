@@ -5,7 +5,7 @@ from aiogram.types import Message, CallbackQuery
 
 from db_handler.database import *
 from keyboards.inline_keyboard import *
-from services.menu_services import show_main_menu, show_main_menu_edit, show_profile, show_goal_selection, show_language_selection, show_about, show_send_image
+from services.menu_services import show_main_menu, show_main_menu_edit, show_profile, show_goal_selection, show_language_selection, show_about, show_send_image, show_user_sex_selection, show_params_selection, show_daily_kcal, show_nutrition_plan
 from states import UserStates
 from utils.converters import *
 from utils.exceptions import GeminiApiError
@@ -52,15 +52,11 @@ async def send_image(callback: CallbackQuery, state: FSMContext):
     await show_send_image(callback.from_user.id, callback, state)
 
 @start_callback_router.callback_query(F.data == 'sex')
-async def goal(callback: CallbackQuery):
-    user_id = callback.from_user.id
-    _ = await get_user_translator(user_id)
-    await callback.message.edit_text(
-        _("Select your sex:"),
-        reply_markup=await user_sex_kb(user_id=user_id))
+async def sex(callback: CallbackQuery):
+    await show_user_sex_selection(callback.from_user.id, callback)
 
 @start_callback_router.callback_query(F.data.in_({'male', 'female'}))
-async def c_goal(callback: CallbackQuery):
+async def c_sex(callback: CallbackQuery):
     user_id = callback.from_user.id
     _ = await get_user_translator(user_id)
     await change_user_sex(user_id, callback.data)
@@ -70,11 +66,7 @@ async def c_goal(callback: CallbackQuery):
 
 @start_callback_router.callback_query(F.data == 'params')
 async def params(callback: CallbackQuery):
-    user_id = callback.from_user.id
-    _ = await get_user_translator(user_id)
-    await callback.message.edit_text(
-        _( "Select a parameter to change its value"),
-        reply_markup=await params_kb(user_id=user_id))
+    await show_params_selection(callback.from_user.id, callback)
 
 @start_callback_router.callback_query(F.data.in_({'lose_weight', 'maintain_weight', 'mass_gain'}))
 async def c_goal(callback: CallbackQuery):
@@ -93,16 +85,13 @@ async def c_param(callback: CallbackQuery, state: FSMContext):
     await state.set_state(UserStates.waiting_for_param)
     await state.update_data(param=callback.data)
     await callback.message.edit_text(
-        _( "Send the parameter value in the format: {param_format}").format(param_format=await params_converter(callback.data, user_id)),
+        _("Send the parameter value in the format: {param_format}").format(param_format=await params_converter(callback.data, user_id)),
         reply_markup=await back_kb('params', user_id=user_id)
     )
 
 @start_callback_router.callback_query(F.data == 'daily_kcal')
 async def daily_kcal(callback: CallbackQuery):
-    user_id = callback.from_user.id
-    _ = await get_user_translator(user_id)
-    c_profile = (await get_profile(user_id))
-    await callback.message.edit_text(_("Select your activity level:"), reply_markup=await daily_kcal_kb(user_id=user_id, activity=c_profile['activity'], ))
+    await show_daily_kcal(callback.from_user.id, callback)
 
 @start_callback_router.callback_query(F.data.regexp(r'activity_[0-4]$'))
 async def daily_kcal_activity(callback: CallbackQuery):
@@ -115,17 +104,7 @@ async def daily_kcal_activity(callback: CallbackQuery):
 
 @start_callback_router.callback_query(F.data == 'nutrition_plan')
 async def nutrition_plan(callback: CallbackQuery, state: FSMContext):
-    user_id = callback.from_user.id
-    _ = await get_user_translator(user_id)
-    c_profile = (await get_profile(user_id))
-    c_daily_kcal = c_profile['daily_kcal']
-    if not c_daily_kcal:
-        await callback.message.edit_text(text=_("Please complete your profile and calculate your daily calorie allowance before using this feature."),
-                                         reply_markup=await back_home_kb(user_id=user_id))
-        return
-    await state.set_state(UserStates.waiting_for_diet_preferences)
-    await state.update_data(original_message_id=callback.message.message_id)
-    await callback.message.edit_text(text=_("Specify any dietary preferences, if you have them.\nExamples: desserts with meals, vegetarian diet, citrus intolerance.\nIf you have no special preferences, type \"None\"."), reply_markup=await back_home_kb(user_id=user_id))
+    await show_nutrition_plan(callback.from_user.id, callback, state)
 
 @start_callback_router.callback_query(F.data == 'find_recipe')
 async def recipe_choose(callback: CallbackQuery, state: FSMContext, bot: Bot):

@@ -4,7 +4,7 @@ from aiogram.types import Message, CallbackQuery
 from typing import Union
 
 from db_handler.database import get_profile, get_user_lang, create_user
-from keyboards.inline_keyboard import main_menu_kb, profile_kb, goal_kb, lang_kb, back_home_kb
+from keyboards.inline_keyboard import main_menu_kb, profile_kb, goal_kb, lang_kb, back_home_kb, user_sex_kb, params_kb, daily_kcal_kb
 from states import UserStates
 from utils.converters import goal_converter, user_sex_converter, bmi_converter, activity_converter, bmi_to_goal_converter
 from utils.delete_menu_message import delete_menu_message
@@ -109,6 +109,57 @@ async def show_send_image(user_id: int, context: Union[Message, CallbackQuery], 
         else:
             await state.update_data(original_message_id=context.message.message_id)
             await context.message.edit_text(_("Send an image"), reply_markup=await back_home_kb(user_id=user_id))
+
+async def show_user_sex_selection(user_id: int, context: Union[Message, CallbackQuery]):
+    _ = await get_user_translator(user_id)
+    text = _("Select your sex:")
+    
+    if isinstance(context, Message):
+        await context.answer(text, reply_markup=await user_sex_kb(user_id=user_id))
+    else:
+        await context.message.edit_text(text, reply_markup=await user_sex_kb(user_id=user_id))
+
+async def show_params_selection(user_id: int, context: Union[Message, CallbackQuery]):
+    _ = await get_user_translator(user_id)
+    text = _("Select a parameter to change its value")
+    
+    if isinstance(context, Message):
+        await context.answer(text, reply_markup=await params_kb(user_id=user_id))
+    else:
+        await context.message.edit_text(text, reply_markup=await params_kb(user_id=user_id))
+
+async def show_daily_kcal(user_id: int, context: Union[Message, CallbackQuery]):
+    _ = await get_user_translator(user_id)
+    c_profile = await get_profile(user_id)
+    text = _("Select your activity level:")
+    
+    if isinstance(context, Message):
+        await context.answer(text, reply_markup=await daily_kcal_kb(user_id=user_id, activity=c_profile['activity']))
+    else:
+        await context.message.edit_text(text, reply_markup=await daily_kcal_kb(user_id=user_id, activity=c_profile['activity']))
+
+async def show_nutrition_plan(user_id: int, context: Union[Message, CallbackQuery], state: FSMContext):
+    _ = await get_user_translator(user_id)
+    c_profile = await get_profile(user_id)
+    c_daily_kcal = c_profile['daily_kcal']
+    
+    if not c_daily_kcal:
+        text = _("Please complete your profile and calculate your daily calorie allowance before using this feature.")
+        if isinstance(context, Message):
+            await context.answer(text, reply_markup=await back_home_kb(user_id=user_id))
+        else:
+            await context.message.edit_text(text, reply_markup=await back_home_kb(user_id=user_id))
+        return
+    
+    text = _("Specify any dietary preferences, if you have them.\nExamples: desserts with meals, vegetarian diet, citrus intolerance.\nIf you have no special preferences, type \"None\".")
+    await state.set_state(UserStates.waiting_for_diet_preferences)
+    
+    if isinstance(context, Message):
+        answer = await context.answer(text, reply_markup=await back_home_kb(user_id=user_id))
+        await state.update_data(original_message_id=answer.message_id)
+    else:
+        await state.update_data(original_message_id=context.message.message_id)
+        await context.message.edit_text(text, reply_markup=await back_home_kb(user_id=user_id))
 
 async def handle_start_command(user_id: int, context: Union[Message, CallbackQuery], state: FSMContext, bot: Bot = None):
     await create_user(user_id)
