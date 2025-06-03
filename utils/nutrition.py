@@ -1,13 +1,11 @@
 from utils.gemini import recognize_dish
 from utils.calorie_ninjas import get_nutrition_info
+from utils.exceptions import NutritionDataNotFoundError
 
 async def get_output(image_bytes, user_lang):
     gemini_output = await recognize_dish(image_bytes, user_lang=user_lang)
     print(f'gemini_output: {gemini_output}')
     
-    if gemini_output == 'api_error' or gemini_output is False:
-        return gemini_output
-        
     dishes_list = gemini_output['dishes']
     dish_names = [dish['dish_en'] for dish in dishes_list]
     print(f'dish_names: {dish_names}')
@@ -35,7 +33,7 @@ async def get_output(image_bytes, user_lang):
                 'carbs': round(dishes_list[i]['weight'] * carbs_per_100g / 100, 1)
             }
         else:
-            return False
+            raise NutritionDataNotFoundError(f"Nutrition data not found for dish: {dish_name}")
 
     print(dishes_list)
     return {'dishes': dishes_list}

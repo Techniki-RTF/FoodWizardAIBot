@@ -14,6 +14,7 @@ from utils.nutrition import get_output
 from db_handler.database import change_param, get_db, get_profile, get_user_lang
 from aiogram.exceptions import TelegramBadRequest
 from utils.locales import get_user_translator
+from utils.exceptions import GeminiApiError, FoodNotRecognizedError, NutritionDataNotFoundError, EmptyResponseError
 
 start_msg_router = Router()
 
@@ -54,38 +55,39 @@ async def handle_image(message: Message, state: FSMContext, bot: Bot):
 
     answer = await message.answer(text=_("Recognizing..."))
     await bot.send_chat_action(message.chat.id, 'upload_photo')
-    response = await get_output(file_bytes, user_lang=await get_user_lang(user_id))
-    match response:
-        case False:
-            await answer.edit_text(_("Could not recognize food in the photo. Please try another image."), reply_markup=await no_response_kb(user_id=user_id))
-        case 'api_error':
-             await answer.edit_text(_("An unexpected error occurred. Please try again."), reply_markup=await no_response_kb(user_id=user_id))
-        case _:
-            dishes = response.get('dishes', response) if isinstance(response, dict) else response
-            dish_data = [(dish['dish_user_lang'], dish['weight'], dish['calories_per_100g'], dish['calories_per_total'], dish['pfc_per_100g'], dish['pfc_per_total']) for dish in dishes]
-            output = ''
-            for dish_name, dish_weight, dish_calories_per_100g, dish_total_calories, pfc_per_100g_dict, pfc_per_total_dict in dish_data:
-                output += (_("Dish name: {dish_name}").format(dish_name=dish_name) + "\n" + 
-                           _("Weight: {dish_weight}g").format(dish_weight=dish_weight) + "\n\n" +
-                           _("Calories (100g): {dish_calories_per_100g} kcal").format(dish_calories_per_100g=dish_calories_per_100g) + "\n" + 
-                           _("Calories ({dish_weight}g): {dish_total_calories} kcal").format(dish_weight=dish_weight, dish_total_calories=dish_total_calories) + "\n\n" +
-                           _("PFC (100g): {protein}g / {fats}g / {carbs}g").format(
-                               protein=pfc_per_100g_dict['protein'],
-                               fats=pfc_per_100g_dict['fats'],
-                               carbs=pfc_per_100g_dict['carbs']
-                           ) + "\n" + 
-                           _("PFC ({dish_weight}g): {protein}g / {fats}g / {carbs}g").format(
-                               dish_weight=dish_weight,
-                               protein=pfc_per_total_dict['protein'],
-                               fats=pfc_per_total_dict['fats'],
-                               carbs=pfc_per_total_dict['carbs']
-                           ) + "\n\n")
-            await answer.delete()
-            try:
-                await message.answer_photo(photo=input_file, caption=f'{output}', reply_markup=await image_response_kb(user_id=user_id))
-            except TelegramBadRequest:
-                answer = await message.answer_photo(photo=input_file)
-                await answer.reply(text=f'{output}', reply_markup=await image_response_kb(user_id=user_id))
+    
+    try:
+        response = await get_output(file_bytes, user_lang=await get_user_lang(user_id))
+        dishes = response.get('dishes', response) if isinstance(response, dict) else response
+        dish_data = [(dish['dish_user_lang'], dish['weight'], dish['calories_per_100g'], dish['calories_per_total'], dish['pfc_per_100g'], dish['pfc_per_total']) for dish in dishes]
+        output = ''
+        for dish_name, dish_weight, dish_calories_per_100g, dish_total_calories, pfc_per_100g_dict, pfc_per_total_dict in dish_data:
+            output += (_("Dish name: {dish_name}").format(dish_name=dish_name) + "\n" + 
+                       _("Weight: {dish_weight}g").format(dish_weight=dish_weight) + "\n\n" +
+                       _("Calories (100g): {dish_calories_per_100g} kcal").format(dish_calories_per_100g=dish_calories_per_100g) + "\n" + 
+                       _("Calories ({dish_weight}g): {dish_total_calories} kcal").format(dish_weight=dish_weight, dish_total_calories=dish_total_calories) + "\n\n" +
+                       _("PFC (100g): {protein}g / {fats}g / {carbs}g").format(
+                           protein=pfc_per_100g_dict['protein'],
+                           fats=pfc_per_100g_dict['fats'],
+                           carbs=pfc_per_100g_dict['carbs']
+                       ) + "\n" + 
+                       _("PFC ({dish_weight}g): {protein}g / {fats}g / {carbs}g").format(
+                           dish_weight=dish_weight,
+                           protein=pfc_per_total_dict['protein'],
+                           fats=pfc_per_total_dict['fats'],
+                           carbs=pfc_per_total_dict['carbs']
+                       ) + "\n\n")
+        await answer.delete()
+        try:
+            await message.answer_photo(photo=input_file, caption=f'{output}', reply_markup=await image_response_kb(user_id=user_id))
+        except TelegramBadRequest:
+            answer = await message.answer_photo(photo=input_file)
+            await answer.reply(text=f'{output}', reply_markup=await image_response_kb(user_id=user_id))
+    except FoodNotRecognizedError:
+        await answer.edit_text(_("Could not recognize food in the photo. Please try another image."), reply_markup=await no_response_kb(user_id=user_id))
+    except (GeminiApiError, NutritionDataNotFoundError):
+        await answer.edit_text(_("An unexpected error occurred. Please try again."), reply_markup=await no_response_kb(user_id=user_id))
+
 @start_msg_router.message(UserStates.waiting_for_param)
 async def handle_param(message: Message, state: FSMContext, bot: Bot):
     user_id = message.from_user.id
@@ -175,159 +177,149 @@ async def handle_diet_preferences(message: Message, state: FSMContext, bot: Bot)
     await bot.send_chat_action(message.chat.id, 'typing')
 
     preferences_text = preferences if preferences.lower() != 'нет' else None
-    response = await generate_nutrition_plan(daily_kcal=c_profile['daily_kcal'], goal=await goal_converter(c_profile['goal'], user_id),
-                                             preferences=preferences_text, user_lang=await get_user_lang(user_id))
-
-    await state.clear()
-
-    match response:
-        case 'api_error':
+    
+    try:
+        response = await generate_nutrition_plan(daily_kcal=c_profile['daily_kcal'], goal=await goal_converter(c_profile['goal'], user_id),
+                                                 preferences=preferences_text, user_lang=await get_user_lang(user_id))
+        
+        days = response.get('days', [])
+        if not days:
             await bot.edit_message_text(
-                text=_("An unexpected API error occurred. Please try again."),
+                text=_("Failed to create a meal plan. Please try again."),
                 chat_id=message.chat.id,
                 message_id=original_message_id,
                 reply_markup=await back_home_kb(user_id=user_id)
             )
-        case _:
-            days = response.get('days', [])
-            if not days:
-                await bot.edit_message_text(
-                    text=_("Failed to create a meal plan. Please try again."),
-                    chat_id=message.chat.id,
-                    message_id=original_message_id,
-                    reply_markup=await back_home_kb(user_id=user_id)
-                )
-                return
+            return
 
-            full_plan = _("🍽️ Weekly meal plan ({daily_kcal} kcal/day)").format(daily_kcal=c_profile['daily_kcal'])
-            if preferences_text:
-                full_plan += "\n" + _("📝 Considering preferences: {preferences}").format(preferences=preferences_text)
-            full_plan += "\n\n"
+        full_plan = _("🍽️ Weekly meal plan ({daily_kcal} kcal/day)").format(daily_kcal=c_profile['daily_kcal'])
+        if preferences_text:
+            full_plan += "\n" + _("📝 Considering preferences: {preferences}").format(preferences=preferences_text)
+        full_plan += "\n\n"
 
-            for day in days:
-                day_name = day['day_name'].capitalize()
-                day_calories = day['calories']
-                day_proteins = day['proteins']
-                day_fats = day['fats']
-                day_carbs = day['carbs']
+        for day in days:
+            day_name = day['day_name'].capitalize()
+            day_calories = day['calories']
+            day_proteins = day['proteins']
+            day_fats = day['fats']
+            day_carbs = day['carbs']
 
-                full_plan += _("📅 {day_name} (P: {day_proteins}g, F: {day_fats}g, C: {day_carbs}g, {day_calories} kcal)").format(
-                    day_name=day_name, 
-                    day_proteins=day_proteins, 
-                    day_fats=day_fats, 
-                    day_carbs=day_carbs, 
-                    day_calories=day_calories
-                ) + "\n\n"
+            full_plan += _("📅 {day_name} (P: {day_proteins}g, F: {day_fats}g, C: {day_carbs}g, {day_calories} kcal)").format(
+                day_name=day_name, 
+                day_proteins=day_proteins, 
+                day_fats=day_fats, 
+                day_carbs=day_carbs, 
+                day_calories=day_calories
+            ) + "\n\n"
 
-                breakfast = day['breakfast'][0]
-                full_plan += _("🍳 Breakfast: {breakfast_dish}").format(breakfast_dish=breakfast['dish_name']) + "\n"
-                full_plan += f"{breakfast['description']}\n"
-                full_plan += _("P: {breakfast_proteins}g, F: {breakfast_fats}g, C: {breakfast_carbs}g, {breakfast_calories} kcal").format(
-                    breakfast_proteins=breakfast['proteins'],
-                    breakfast_fats=breakfast['fats'],
-                    breakfast_carbs=breakfast['carbs'],
-                    breakfast_calories=breakfast['calories']
-                ) + "\n\n"
+            breakfast = day['breakfast'][0]
+            full_plan += _("🍳 Breakfast: {breakfast_dish}").format(breakfast_dish=breakfast['dish_name']) + "\n"
+            full_plan += f"{breakfast['description']}\n"
+            full_plan += _("P: {breakfast_proteins}g, F: {breakfast_fats}g, C: {breakfast_carbs}g, {breakfast_calories} kcal").format(
+                breakfast_proteins=breakfast['proteins'],
+                breakfast_fats=breakfast['fats'],
+                breakfast_carbs=breakfast['carbs'],
+                breakfast_calories=breakfast['calories']
+            ) + "\n\n"
 
-                lunch = day['lunch'][0]
-                full_plan += _("🥗 Lunch: {lunch_dish}").format(lunch_dish=lunch['dish_name']) + "\n"
-                full_plan += f"{lunch['description']}\n"
-                full_plan += _("P: {lunch_proteins}g, F: {lunch_fats}g, C: {lunch_carbs}g, {lunch_calories} kcal").format(
-                    lunch_proteins=lunch['proteins'],
-                    lunch_fats=lunch['fats'],
-                    lunch_carbs=lunch['carbs'],
-                    lunch_calories=lunch['calories']
-                ) + "\n\n"
+            lunch = day['lunch'][0]
+            full_plan += _("🥗 Lunch: {lunch_dish}").format(lunch_dish=lunch['dish_name']) + "\n"
+            full_plan += f"{lunch['description']}\n"
+            full_plan += _("P: {lunch_proteins}g, F: {lunch_fats}g, C: {lunch_carbs}g, {lunch_calories} kcal").format(
+                lunch_proteins=lunch['proteins'],
+                lunch_fats=lunch['fats'],
+                lunch_carbs=lunch['carbs'],
+                lunch_calories=lunch['calories']
+            ) + "\n\n"
 
-                dinner = day['dinner'][0]
-                full_plan += _("🍲 Dinner: {dinner_dish}").format(dinner_dish=dinner['dish_name']) + "\n"
-                full_plan += f"{dinner['description']}\n"
-                full_plan += _("P: {dinner_proteins}g, F: {dinner_fats}g, C: {dinner_carbs}g, {dinner_calories} kcal").format(
-                    dinner_proteins=dinner['proteins'],
-                    dinner_fats=dinner['fats'],
-                    dinner_carbs=dinner['carbs'],
-                    dinner_calories=dinner['calories']
-                ) + "\n\n"
+            dinner = day['dinner'][0]
+            full_plan += _("🍲 Dinner: {dinner_dish}").format(dinner_dish=dinner['dish_name']) + "\n"
+            full_plan += f"{dinner['description']}\n"
+            full_plan += _("P: {dinner_proteins}g, F: {dinner_fats}g, C: {dinner_carbs}g, {dinner_calories} kcal").format(
+                dinner_proteins=dinner['proteins'],
+                dinner_fats=dinner['fats'],
+                dinner_carbs=dinner['carbs'],
+                dinner_calories=dinner['calories']
+            ) + "\n\n"
 
-                full_plan += "➖➖➖➖➖➖➖➖➖➖➖➖\n\n"
+            full_plan += "➖➖➖➖➖➖➖➖➖➖➖➖\n\n"
 
-            full_plan += _("Comments from the neural network: {commentary}").format(commentary=response.get('commentary', []))
+        full_plan += _("Comments from the neural network: {commentary}").format(commentary=response.get('commentary', []))
 
-            await bot.delete_message(chat_id=message.chat.id, message_id=original_message_id)
-            await message.answer(full_plan, reply_markup=await home_kb(user_id=user_id))
+        await bot.edit_message_text(
+            text=full_plan,
+            chat_id=message.chat.id,
+            message_id=original_message_id,
+            reply_markup=await back_home_kb(user_id=user_id)
+        )
+    except (GeminiApiError, EmptyResponseError):
+        await bot.edit_message_text(
+            text=_("An unexpected API error occurred. Please try again."),
+            chat_id=message.chat.id,
+            message_id=original_message_id,
+            reply_markup=await back_home_kb(user_id=user_id)
+        )
+
+    await state.clear()
 
 @start_msg_router.message(UserStates.waiting_for_food_swap)
 async def handle_food_swap(message: Message, state: FSMContext, bot: Bot):
     user_id = message.from_user.id
     _ = await get_user_translator(user_id)
     
-    food_to_swap = message.text
-
     state_data = await state.get_data()
     original_message_id = state_data.get('original_message_id')
-    file_bytes = state_data.get('file_bytes')
-
+    image_bytes = state_data.get('image_bytes')
+    
+    food_list = message.text.split(',')
+    food_list = [food.strip() for food in food_list]
+    
     await message.delete()
     
-    if len(food_to_swap) > 100:
-        await bot.edit_message_caption(
-            caption=_("Text too long. Please list ingredients within 100 characters."),
-            chat_id=message.chat.id,
-            message_id=original_message_id,
-            reply_markup=await back_home_kb(user_id=user_id)
-        )
-        return
-
-    await bot.edit_message_caption(
-        caption=_("Searching for low-calorie alternatives..."),
+    await bot.edit_message_text(
+        text=_("Searching for alternatives..."),
         chat_id=message.chat.id,
-        message_id=original_message_id,
-        reply_markup=None
+        message_id=original_message_id
     )
 
     await bot.send_chat_action(message.chat.id, 'typing')
-
-    response = await generate_food_swap([food_to_swap], file_bytes, user_lang=await get_user_lang(user_id))
-
-    await state.clear()
-
-    match response:
-        case 'api_error':
-            await bot.edit_message_caption(
-                caption=_("An unexpected API error occurred. Please try again."),
+    
+    try:
+        response = await generate_food_swap(food_list, image_bytes, user_lang=await get_user_lang(user_id))
+        
+        swaps = response.get('swaps', [])
+        if not swaps:
+            await bot.edit_message_text(
+                text=_("No alternatives found. Please try other products."),
                 chat_id=message.chat.id,
                 message_id=original_message_id,
                 reply_markup=await back_home_kb(user_id=user_id)
             )
-        case _:
-            result = _("🔄 Low-calorie alternatives for ingredients:") + "\n\n"
+            return
+
+        swap_text = _("🔄 Food alternatives") + ":\n\n"
+        for swap in swaps:
+            original_food = swap.get('original_food', 'Unknown')
+            alternatives = swap.get('alternatives', [])
+            reason = swap.get('reason', 'Health benefits')
             
-            for item in response['swapped']:
-                result += f"{item['original_ingredient']} ➡️ {item['alternative']}\n\n"
-                result += f"{item['description']}\n"
-                
-                nutrition = item['nutritional_info']
-                
-                if nutrition['calories'] and nutrition['calories_old']:
-                    cal_diff = nutrition['calories_old'] - nutrition['calories']
-                    cal_percent = round((cal_diff / nutrition['calories_old']) * 100)
-                    result += _("Calories: {calories} kcal instead of {calories_old} kcal (-{cal_diff} kcal, -{cal_percent}%)").format(
-                        calories=nutrition['calories'],
-                        calories_old=nutrition['calories_old'],
-                        cal_diff=cal_diff,
-                        cal_percent=cal_percent
-                    ) + "\n\n"
-                
-                if nutrition['protein'] or nutrition['fats'] or nutrition['carbs']:
-                    result += _("PFC difference (per 100g): P: {protein}g, F: {fats}g, C: {carbs}g").format(
-                        protein=nutrition['protein'],
-                        fats=nutrition['fats'],
-                        carbs=nutrition['carbs']
-                    ) + "\n\n"
-            
-            await bot.edit_message_caption(
-                caption=result,
-                chat_id=message.chat.id,
-                message_id=original_message_id,
-                reply_markup=await home_kb(user_id=user_id)
-            )
+            swap_text += f"🥘 {original_food}\n"
+            for alt in alternatives:
+                swap_text += f"→ {alt}\n"
+            swap_text += f"💡 {reason}\n\n"
+
+        await bot.edit_message_text(
+            text=swap_text,
+            chat_id=message.chat.id,
+            message_id=original_message_id,
+            reply_markup=await back_home_kb(user_id=user_id)
+        )
+    except GeminiApiError:
+        await bot.edit_message_text(
+            text=_("An unexpected error occurred. Please try again."),
+            chat_id=message.chat.id,
+            message_id=original_message_id,
+            reply_markup=await back_home_kb(user_id=user_id)
+        )
+
+    await state.clear()

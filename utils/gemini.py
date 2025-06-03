@@ -5,6 +5,7 @@ from decouple import config as env_config
 from google.genai.errors import APIError
 from utils.gemini_constants import *
 from google.genai.types import Tool, GoogleSearch
+from utils.exceptions import GeminiApiError, EmptyResponseError, FoodNotRecognizedError
 
 client = genai.Client(api_key=env_config("GEMINI_API_KEY"))
 
@@ -21,7 +22,7 @@ async def make_gemini_api_request(model, contents, config, max_attempts=3):
             if attempt < max_attempts - 1:
                 await asyncio.sleep(1)
             else:
-                return 'api_error'
+                raise GeminiApiError(f"Gemini API failed after {max_attempts} attempts: {e}")
     return None
 
 async def recognize_dish(image_bytes, user_lang):
@@ -38,11 +39,9 @@ async def recognize_dish(image_bytes, user_lang):
         config=generate_content_config
     )
     
-    if response == 'api_error':
-        return 'api_error'
     response = json.loads(response.text)
     if len(response['dishes']) == 0:
-        return False
+        raise FoodNotRecognizedError("No dishes recognized in the image")
     return response
 
 async def generate_nutrition_plan(daily_kcal, goal, user_lang, preferences=None):
@@ -63,11 +62,9 @@ async def generate_nutrition_plan(daily_kcal, goal, user_lang, preferences=None)
         config=generate_content_config
     )
     
-    if response == 'api_error':
-        return 'api_error'
     response = json.loads(response.text)
     if len(response['days']) == 0:
-        return 'api_error'
+        raise EmptyResponseError("Generated plan contains no days")
     print(response)
     return response
 
@@ -86,8 +83,6 @@ async def generate_recipe(dish, image_bytes, user_lang):
         config=generate_content_config
     )
     
-    if response == 'api_error':
-        return 'api_error'
     return await recipe_response_to_json(response)
 
 async def recipe_response_to_json(response):
@@ -105,8 +100,6 @@ async def recipe_response_to_json(response):
         config=generate_content_config
     )
     
-    if response == 'api_error':
-        return 'api_error'
     response = json.loads(response.text)
     print(response)
     return response
@@ -126,8 +119,6 @@ async def generate_food_swap(dishes, image_bytes, user_lang):
         config=generate_content_config
     )
     
-    if response == 'api_error':
-        return 'api_error'
     response = json.loads(response.text)
     print(response)
     return response
