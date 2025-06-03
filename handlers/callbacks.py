@@ -5,9 +5,9 @@ from aiogram.types import Message, CallbackQuery
 
 from db_handler.database import *
 from keyboards.inline_keyboard import *
+from services.menu_services import show_main_menu, show_main_menu_edit, show_profile, show_goal_selection, show_language_selection, show_about, show_send_image
 from states import UserStates
 from utils.converters import *
-from utils.delete_menu_message import delete_menu_message
 from utils.exceptions import GeminiApiError
 from utils.gemini import generate_recipe
 from utils.image_data import get_image_data
@@ -18,88 +18,38 @@ start_callback_router = Router()
 
 @start_callback_router.callback_query(F.data == 'lang')
 async def lang(callback: CallbackQuery = None, message: Message = None):
-    if callback:
-        await callback.message.edit_text('Выбери язык / Choose your language', reply_markup=await lang_kb())
-    else:
-        await message.answer('Выбери язык / Choose your language', reply_markup=await lang_kb())
+    context = callback if callback else message
+    await show_language_selection(context)
 
 @start_callback_router.callback_query(F.data.in_({'ru', 'en'}))
 async def lang_handler(callback: CallbackQuery, state: FSMContext, bot: Bot):
     await change_user_lang(callback.from_user.id, callback.data)
     await callback.message.delete()
-    await home(callback, state, bot)
+    await show_main_menu(callback.from_user.id, callback, state, bot)
 
 @start_callback_router.callback_query(F.data == 'home')
 async def home(callback: CallbackQuery, state: FSMContext, bot: Bot):
-    user_id = callback.from_user.id
-    _ = await get_user_translator(user_id)
-    await delete_menu_message(callback.message, state, bot)
-    await callback.answer()
-    answer = await callback.message.answer(_("Hello, {name}!\nMenu:").format(name=callback.from_user.full_name), reply_markup=await main_menu_kb(user_id=user_id))
-    await state.update_data(menu_message_id=answer.message_id)
+    await show_main_menu(callback.from_user.id, callback, state, bot)
 
 @start_callback_router.callback_query(F.data == 'back_home')
 async def back_home(callback: CallbackQuery, state: FSMContext):
-    user_id = callback.from_user.id
-    _ = await get_user_translator(user_id)
-    current_state = await state.get_state()
-    if current_state:
-        await state.clear()
-    await callback.message.edit_text(_("Hello, {name}!\nMenu:").format(name=callback.from_user.full_name), reply_markup=await main_menu_kb(user_id=user_id))
-
-@start_callback_router.callback_query(F.data == 'send_image')
-async def send_image(callback: CallbackQuery, state: FSMContext):
-    user_id = callback.from_user.id
-    _ = await get_user_translator(user_id)
-    await callback.answer()
-    await state.set_state(UserStates.waiting_for_image)
-    if callback.message.photo:
-        answer = await callback.message.answer(text=_("Send an image"), reply_markup=await back_home_kb(user_id=user_id))
-        await state.update_data(original_message_id=answer.message_id)
-    else:
-        await state.update_data(original_message_id=callback.message.message_id)
-        await callback.message.edit_text(_("Send an image"), reply_markup=await back_home_kb(user_id=user_id))
-
-@start_callback_router.callback_query(F.data == 'about')
-async def about(callback: CallbackQuery):
-    user_id = callback.from_user.id
-    _ = await get_user_translator(user_id)
-    await callback.message.edit_text(
-        _("Developer: t.me/renamq\nTeam: Techniki"),
-        reply_markup=await back_home_kb(user_id=user_id))
+    await show_main_menu_edit(callback.from_user.id, callback, state)
 
 @start_callback_router.callback_query(F.data == 'profile')
 async def profile(callback: CallbackQuery):
-    user_id = callback.from_user.id
-    _ = await get_user_translator(user_id)
-    c_profile = (await get_profile(user_id))
-    c_profile = {k: _("no data") if v in ('', None) else v for k, v in c_profile.items()}
-    await callback.message.edit_text(
-        _("Your goal: {goal}").format(goal=await goal_converter(c_profile['goal'], user_id)) + "\n" +
-        _("Your sex: {sex}").format(sex=await user_sex_converter(c_profile['sex'], user_id)) + "\n" +
-        _("Your current parameters: {height} cm / {weight} kg / {age} years").format(
-            height=c_profile['height'], 
-            weight=c_profile['weight'], 
-            age=c_profile['age']
-        ) + "\n" +
-        _("Your Body Mass Index (BMI): {bmi}").format(
-            bmi=await bmi_converter(c_profile['bmi'], user_id) if type(c_profile['bmi']) in {float, int} else _( "no data")
-        ) + "\n" +
-        _("Your daily calorie allowance considering your activity level ({activity}): {daily_kcal}").format(
-            activity=await activity_converter(c_profile['activity'], user_id),
-            daily_kcal=c_profile['daily_kcal']
-        ),
-        reply_markup=await profile_kb(user_id=user_id))
+    await show_profile(callback.from_user.id, callback)
 
 @start_callback_router.callback_query(F.data == 'goal')
 async def goal(callback: CallbackQuery):
-    user_id = callback.from_user.id
-    _ = await get_user_translator(user_id)
-    c_profile = (await get_profile(user_id))
-    bmi = c_profile['bmi']
-    await callback.message.edit_text(
-        _( "Select your goal:") + (await bmi_to_goal_converter(bmi, user_id) if bmi else ''),
-        reply_markup=await goal_kb(user_id=user_id, bmi=bmi))
+    await show_goal_selection(callback.from_user.id, callback)
+
+@start_callback_router.callback_query(F.data == 'about')
+async def about(callback: CallbackQuery):
+    await show_about(callback.from_user.id, callback)
+
+@start_callback_router.callback_query(F.data == 'send_image')
+async def send_image(callback: CallbackQuery, state: FSMContext):
+    await show_send_image(callback.from_user.id, callback, state)
 
 @start_callback_router.callback_query(F.data == 'sex')
 async def goal(callback: CallbackQuery):

@@ -3,28 +3,37 @@ from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from db_handler.database import create_user, get_user_lang
-from handlers.callbacks import lang
-from keyboards.inline_keyboard import main_menu_kb
-from utils.delete_menu_message import delete_menu_message
-from utils.locales import get_user_translator
+from services.menu_services import handle_start_command, show_language_selection, show_profile, show_goal_selection, show_about, show_send_image
 
 start_cmd_router = Router()
 
 @start_cmd_router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext, bot: Bot):
-    await delete_menu_message(message, state, bot)
-    await message.delete()
     user_id = message.from_user.id
-    await create_user(user_id)
-    if not await get_user_lang(user_id):
-        await lang(message=message)
-        return
-    _ = await get_user_translator(user_id)
-    answer = await message.answer(_("Hello, {name}!\nMenu:").format(name=message.from_user.full_name), reply_markup=await main_menu_kb(user_id=user_id))
-    await state.update_data(menu_message_id=answer.message_id)
+    await handle_start_command(user_id, message, state, bot)
 
 @start_cmd_router.message(Command('lang'))
 async def cmd_lang(message: Message):
-    await lang(message=message)
+    await show_language_selection(message)
     await message.delete()
+
+@start_cmd_router.message(Command('profile'))
+async def cmd_profile(message: Message):
+    user_id = message.from_user.id
+    await show_profile(user_id, message)
+
+@start_cmd_router.message(Command('goal'))
+async def cmd_goal(message: Message):
+    user_id = message.from_user.id
+    await show_goal_selection(user_id, message)
+
+@start_cmd_router.message(Command('about'))
+async def cmd_about(message: Message):
+    user_id = message.from_user.id
+    await show_about(user_id, message)
+
+@start_cmd_router.message(Command('recognize'))
+async def cmd_image(message: Message, state: FSMContext):
+    user_id = message.from_user.id
+    await show_send_image(user_id, message, state)
+
