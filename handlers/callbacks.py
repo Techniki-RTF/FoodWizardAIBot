@@ -8,6 +8,7 @@ from db_handler.database import *
 from keyboards.inline_keyboard import *
 from states import UserStates
 from utils.converters import *
+from utils.delete_menu_message import delete_menu_message
 from utils.gemini import generate_recipe
 from utils.image_data import get_image_data
 from utils.locales import get_user_translator
@@ -15,16 +16,6 @@ from utils.msj_equation import msj_equation
 from utils.exceptions import GeminiApiError
 
 start_callback_router = Router()
-
-async def delete_menu_message(message, current_state, bot):
-    data = await current_state.get_data()
-    menu_message_id = data.get('menu_message_id')
-    if menu_message_id:
-        try:
-            await bot.delete_message(message.chat.id, menu_message_id)
-        except TelegramBadRequest:
-            pass
-
 @start_callback_router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext, bot: Bot):
     await delete_menu_message(message, state, bot)
