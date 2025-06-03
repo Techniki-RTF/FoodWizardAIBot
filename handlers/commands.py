@@ -1,10 +1,11 @@
 from aiogram import Router, Bot
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 from db_handler.database import create_user, get_user_lang
 from handlers.callbacks import lang
+from keyboards.inline_keyboard import main_menu_kb
 from utils.delete_menu_message import delete_menu_message
 from utils.locales import get_user_translator
 
@@ -22,3 +23,8 @@ async def cmd_start(message: Message, state: FSMContext, bot: Bot):
     _ = await get_user_translator(user_id)
     answer = await message.answer(_("Hello, {name}!\nMenu:").format(name=message.from_user.full_name), reply_markup=await main_menu_kb(user_id=user_id))
     await state.update_data(menu_message_id=answer.message_id)
+
+@start_cmd_router.message(Command('lang'))
+async def cmd_lang(message: Message):
+    await lang(message=message)
+    await message.delete()
