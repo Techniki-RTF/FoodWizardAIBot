@@ -385,3 +385,6 @@ msgstr "PFC (100g): {protein}g / {fats}g / {carbs}g"
 
 msgid "PFC ({dish_weight}g): {protein}g / {fats}g / {carbs}g"
 msgstr "PFC ({dish_weight}g): {protein}g / {fats}g / {carbs}g"
+
+msgid "selected"
+msgstr "selected"

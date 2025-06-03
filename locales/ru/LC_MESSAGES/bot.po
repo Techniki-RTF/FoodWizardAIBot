@@ -132,8 +132,8 @@ msgstr ""
 "Недостаточно данных.\n"
 "Заполните профиль, пожалуйста."
 
-msgid "Your daily calorie allowance: {bmr} kcal{goal_info}"
-msgstr "Ваша суточная норма калорий: {bmr} ккал{goal_info}"
+msgid "Your daily calorie allowance: {bmr} kcal"
+msgstr "Ваша суточная норма калорий: {bmr} ккал"
 
 msgid ""
 "\n"
@@ -382,3 +382,6 @@ msgstr "БЖУ (100г): {protein}г / {fats}г / {carbs}г"
 
 msgid "PFC ({dish_weight}g): {protein}g / {fats}g / {carbs}g"
 msgstr "БЖУ ({dish_weight}г): {protein}г / {fats}г / {carbs}г"
+
+msgid "selected"
+msgstr "выбрано"
