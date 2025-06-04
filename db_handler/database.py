@@ -61,6 +61,7 @@ async def get_user_lang(uid):
 
 async def change_user_lang(uid, lang):
     c_db = await get_db()
+    await create_user(uid)
     await c_db.execute('UPDATE users SET lang = ? WHERE user_id = ?', (lang, uid))
     await c_db.commit()
 
