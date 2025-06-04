@@ -11,7 +11,7 @@ from utils.delete_menu_message import delete_menu_message
 from utils.locales import get_user_translator
 
 async def show_main_menu(user_id: int, context: Union[Message, CallbackQuery], state: FSMContext, bot: Bot = None):
-    _ = await get_user_translator(user_id)
+    _ = await get_user_translator(user_id, context)
     
     if isinstance(context, Message):
         await delete_menu_message(context, state, bot)
@@ -31,7 +31,7 @@ async def show_main_menu(user_id: int, context: Union[Message, CallbackQuery], s
     await state.update_data(menu_message_id=answer.message_id)
 
 async def show_main_menu_edit(user_id: int, callback: CallbackQuery, state: FSMContext):
-    _ = await get_user_translator(user_id)
+    _ = await get_user_translator(user_id, callback)
     current_state = await state.get_state()
     if current_state:
         await state.clear()
@@ -41,7 +41,7 @@ async def show_main_menu_edit(user_id: int, callback: CallbackQuery, state: FSMC
     )
 
 async def show_profile(user_id: int, context: Union[Message, CallbackQuery]):
-    _ = await get_user_translator(user_id)
+    _ = await get_user_translator(user_id, context)
     c_profile = await get_profile(user_id)
     c_profile = {k: _("no data") if v in ('', None) else v for k, v in c_profile.items()}
     
@@ -68,7 +68,7 @@ async def show_profile(user_id: int, context: Union[Message, CallbackQuery]):
         await context.message.edit_text(text, reply_markup=await profile_kb(user_id=user_id))
 
 async def show_goal_selection(user_id: int, context: Union[Message, CallbackQuery]):
-    _ = await get_user_translator(user_id)
+    _ = await get_user_translator(user_id, context)
     c_profile = await get_profile(user_id)
     bmi = c_profile['bmi']
     text = _("Select your goal:") + (await bmi_to_goal_converter(bmi, user_id) if bmi else '')
@@ -85,7 +85,7 @@ async def show_language_selection(context: Union[Message, CallbackQuery]):
         await context.answer('Выбери язык / Choose your language', reply_markup=await lang_kb())
 
 async def show_about(user_id: int, context: Union[Message, CallbackQuery]):
-    _ = await get_user_translator(user_id)
+    _ = await get_user_translator(user_id, context)
     text = _("Developer: t.me/renamq\nTeam: Techniki")
     
     if isinstance(context, Message):
@@ -94,7 +94,7 @@ async def show_about(user_id: int, context: Union[Message, CallbackQuery]):
         await context.message.edit_text(text, reply_markup=await back_home_kb(user_id=user_id))
 
 async def show_send_image(user_id: int, context: Union[Message, CallbackQuery], state: FSMContext):
-    _ = await get_user_translator(user_id)
+    _ = await get_user_translator(user_id, context)
     await state.set_state(UserStates.waiting_for_image)
     
     if isinstance(context, Message):
@@ -111,7 +111,7 @@ async def show_send_image(user_id: int, context: Union[Message, CallbackQuery], 
             await context.message.edit_text(_("Send an image"), reply_markup=await back_home_kb(user_id=user_id))
 
 async def show_user_sex_selection(user_id: int, context: Union[Message, CallbackQuery]):
-    _ = await get_user_translator(user_id)
+    _ = await get_user_translator(user_id, context)
     text = _("Select your sex:")
     
     if isinstance(context, Message):
@@ -120,7 +120,7 @@ async def show_user_sex_selection(user_id: int, context: Union[Message, Callback
         await context.message.edit_text(text, reply_markup=await user_sex_kb(user_id=user_id))
 
 async def show_params_selection(user_id: int, context: Union[Message, CallbackQuery]):
-    _ = await get_user_translator(user_id)
+    _ = await get_user_translator(user_id, context)
     text = _("Select a parameter to change its value")
     
     if isinstance(context, Message):
@@ -129,7 +129,7 @@ async def show_params_selection(user_id: int, context: Union[Message, CallbackQu
         await context.message.edit_text(text, reply_markup=await params_kb(user_id=user_id))
 
 async def show_daily_kcal(user_id: int, context: Union[Message, CallbackQuery]):
-    _ = await get_user_translator(user_id)
+    _ = await get_user_translator(user_id, context)
     c_profile = await get_profile(user_id)
     text = _("Select your activity level:")
     
@@ -139,7 +139,7 @@ async def show_daily_kcal(user_id: int, context: Union[Message, CallbackQuery]):
         await context.message.edit_text(text, reply_markup=await daily_kcal_kb(user_id=user_id, activity=c_profile['activity']))
 
 async def show_nutrition_plan(user_id: int, context: Union[Message, CallbackQuery], state: FSMContext):
-    _ = await get_user_translator(user_id)
+    _ = await get_user_translator(user_id, context)
     c_profile = await get_profile(user_id)
     c_daily_kcal = c_profile['daily_kcal']
     

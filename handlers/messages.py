@@ -30,7 +30,7 @@ async def delete_original_message(original_message_id, bot, message):
 @start_msg_router.message(F.photo, UserStates.waiting_for_image)
 async def handle_image(message: Message, state: FSMContext, bot: Bot):
     user_id = message.from_user.id
-    _ = await get_user_translator(user_id)
+    _ = await get_user_translator(user_id, message)
     
     state_data = await state.get_data()
 
@@ -91,7 +91,7 @@ async def handle_image(message: Message, state: FSMContext, bot: Bot):
 @start_msg_router.message(UserStates.waiting_for_param)
 async def handle_param(message: Message, state: FSMContext, bot: Bot):
     user_id = message.from_user.id
-    _ = await get_user_translator(user_id)
+    _ = await get_user_translator(user_id, message)
     
     state_data = await state.get_data()
     original_message_id = state_data.get('original_message_id')
@@ -108,7 +108,7 @@ async def handle_param(message: Message, state: FSMContext, bot: Bot):
 @start_msg_router.message_reaction()
 async def handle_reaction(message_reaction: MessageReactionUpdated, bot: Bot):
     user_id = message_reaction.user.id
-    _ = await get_user_translator(user_id)
+    _ = await get_user_translator(user_id, message_reaction)
     
     if user_id == int(config("ADMINS")):
         c_db = await get_db()
@@ -149,7 +149,7 @@ async def handle_reaction(message_reaction: MessageReactionUpdated, bot: Bot):
 @start_msg_router.message(UserStates.waiting_for_diet_preferences)
 async def handle_diet_preferences(message: Message, state: FSMContext, bot: Bot):
     user_id = message.from_user.id
-    _ = await get_user_translator(user_id)
+    _ = await get_user_translator(user_id, message)
     
     preferences = message.text
 
@@ -265,7 +265,7 @@ async def handle_diet_preferences(message: Message, state: FSMContext, bot: Bot)
 @start_msg_router.message(UserStates.waiting_for_food_swap)
 async def handle_food_swap(message: Message, state: FSMContext, bot: Bot):
     user_id = message.from_user.id
-    _ = await get_user_translator(user_id)
+    _ = await get_user_translator(user_id, message)
     
     state_data = await state.get_data()
     original_message_id = state_data.get('original_message_id')

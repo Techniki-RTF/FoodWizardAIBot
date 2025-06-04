@@ -58,7 +58,7 @@ async def sex(callback: CallbackQuery):
 @start_callback_router.callback_query(F.data.in_({'male', 'female'}))
 async def c_sex(callback: CallbackQuery):
     user_id = callback.from_user.id
-    _ = await get_user_translator(user_id)
+    _ = await get_user_translator(user_id, callback)
     await change_user_sex(user_id, callback.data)
     await callback.message.edit_text(
         _("You have selected: {sex}").format(sex=await user_sex_converter(callback.data, user_id)),
@@ -71,7 +71,7 @@ async def params(callback: CallbackQuery):
 @start_callback_router.callback_query(F.data.in_({'lose_weight', 'maintain_weight', 'mass_gain'}))
 async def c_goal(callback: CallbackQuery):
     user_id = callback.from_user.id
-    _ = await get_user_translator(user_id)
+    _ = await get_user_translator(user_id, callback)
     await change_goal(user_id, callback.data)
     await callback.message.edit_text(
         _("You have chosen {goal} as your goal").format(goal=await goal_converter(callback.data, user_id)),
@@ -80,7 +80,7 @@ async def c_goal(callback: CallbackQuery):
 @start_callback_router.callback_query(F.data.in_({'c_height', 'c_weight', 'c_age'}))
 async def c_param(callback: CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
-    _ = await get_user_translator(user_id)
+    _ = await get_user_translator(user_id, callback)
     await state.update_data(original_message_id=callback.message.message_id)
     await state.set_state(UserStates.waiting_for_param)
     await state.update_data(param=callback.data)
@@ -109,7 +109,7 @@ async def nutrition_plan(callback: CallbackQuery, state: FSMContext):
 @start_callback_router.callback_query(F.data == 'find_recipe')
 async def recipe_choose(callback: CallbackQuery, state: FSMContext, bot: Bot):
     user_id = callback.from_user.id
-    _ = await get_user_translator(user_id)
+    _ = await get_user_translator(user_id, callback)
     await callback.answer()
     file_bytes, input_file = await get_image_data(callback.message, bot)
 
@@ -130,7 +130,7 @@ async def recipe_choose(callback: CallbackQuery, state: FSMContext, bot: Bot):
 @start_callback_router.callback_query(F.data.regexp(r'recipe_..*'))
 async def recipe_find(callback: CallbackQuery, state: FSMContext, bot: Bot):
     user_id = callback.from_user.id
-    _ = await get_user_translator(user_id)
+    _ = await get_user_translator(user_id, callback)
     await callback.answer()
     dish = callback.data.split('_', 1)[1]
     file_bytes, input_file = await get_image_data(callback.message, bot)
@@ -200,7 +200,7 @@ async def recipe_find(callback: CallbackQuery, state: FSMContext, bot: Bot):
 @start_callback_router.callback_query(F.data == 'find_food_swap')
 async def find_food_swap(callback: CallbackQuery, state: FSMContext, bot: Bot):
     user_id = callback.from_user.id
-    _ = await get_user_translator(user_id)
+    _ = await get_user_translator(user_id, callback)
     await callback.answer()
     file_bytes, input_file = await get_image_data(callback.message, bot)
 
@@ -218,7 +218,7 @@ async def find_food_swap(callback: CallbackQuery, state: FSMContext, bot: Bot):
 @start_callback_router.callback_query(F.data == 'cancel')
 async def cancel_recipe(callback: CallbackQuery, state: FSMContext):
     current_state = await state.get_state()
-    _ = await get_user_translator(callback.from_user.id)
+    _ = await get_user_translator(callback.from_user.id, callback)
     match current_state:
         case UserStates.waiting_for_recipe:
             await state.clear()
