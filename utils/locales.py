@@ -29,10 +29,13 @@ async def get_user_translator(user_id, context: Optional[Union[Message, Callback
         
         from keyboards.inline_keyboard import lang_kb
         
-        if isinstance(context, CallbackQuery):
-            await context.message.edit_text('Выбери язык / Choose your language', reply_markup=await lang_kb())
-        else:
-            await context.answer('Выбери язык / Choose your language', reply_markup=await lang_kb())
+        try:
+            if isinstance(context, CallbackQuery):
+                await context.message.answer('Выбери язык / Choose your language', reply_markup=await lang_kb())
+            else:
+                await context.answer('Выбери язык / Choose your language', reply_markup=await lang_kb())
+        except Exception:
+            pass
         
         _redirect_in_progress = False
     
