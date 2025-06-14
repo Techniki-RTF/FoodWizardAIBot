@@ -138,8 +138,9 @@ async def retry_plan_kb(user_id):
 async def recipe_list_kb(dishes, user_id):
     _ = await get_user_translator(user_id)
     inline_kb_list = [[InlineKeyboardButton(text=_("Cancel"), callback_data='cancel')]]
-    for dish in dishes:
-        inline_kb_list.insert(0, [InlineKeyboardButton(text=dish, callback_data=f'recipe_{dish}')])
+    for i, dish in enumerate(dishes):
+        callback_data = f'recipe_{i}'
+        inline_kb_list.insert(0, [InlineKeyboardButton(text=dish, callback_data=callback_data)])
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 async def cancel_kb(user_id):

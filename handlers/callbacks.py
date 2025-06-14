@@ -117,7 +117,7 @@ async def recipe_choose(callback: CallbackQuery, state: FSMContext, bot: Bot):
               if line.startswith('Название блюда:')]
     
     await state.set_state(UserStates.waiting_for_recipe)
-    await state.update_data(file_bytes=file_bytes)
+    await state.update_data(file_bytes=file_bytes, dishes=dishes)
 
     answer = await callback.message.answer_photo(
         photo=input_file, 
@@ -127,12 +127,26 @@ async def recipe_choose(callback: CallbackQuery, state: FSMContext, bot: Bot):
     
     await state.update_data(original_message_id=answer.message_id)
 
-@start_callback_router.callback_query(F.data.regexp(r'recipe_..*'))
+@start_callback_router.callback_query(F.data.regexp(r'recipe_\d+'))
 async def recipe_find(callback: CallbackQuery, state: FSMContext, bot: Bot):
     user_id = callback.from_user.id
     _ = await get_user_translator(user_id, callback)
     await callback.answer()
-    dish = callback.data.split('_', 1)[1]
+    
+    dish_index = int(callback.data.split('_')[1])
+    
+    state_data = await state.get_data()
+    dishes = state_data.get('dishes', [])
+    
+    if dish_index >= len(dishes):
+        await callback.message.edit_caption(
+            caption=_("Failed to find a recipe. Please try again."),
+            reply_markup=await back_home_kb(user_id=user_id)
+        )
+        return
+    
+    dish = dishes[dish_index]
+    
     file_bytes, input_file = await get_image_data(callback.message, bot)
 
     await callback.message.edit_caption(caption=_("Searching for a recipe..."), reply_markup=None)
