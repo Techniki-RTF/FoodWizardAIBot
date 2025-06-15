@@ -1,4 +1,5 @@
 from aiogram import Bot
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 from typing import Union
@@ -30,15 +31,19 @@ async def show_main_menu(user_id: int, context: Union[Message, CallbackQuery], s
     
     await state.update_data(menu_message_id=answer.message_id)
 
-async def show_main_menu_edit(user_id: int, callback: CallbackQuery, state: FSMContext):
+async def show_main_menu_edit(user_id: int, callback: CallbackQuery, state: FSMContext, bot: Bot = None):
     _ = await get_user_translator(user_id, callback)
     current_state = await state.get_state()
     if current_state:
         await state.clear()
-    await callback.message.edit_text(
-        _("Hello, {name}!\nMenu:").format(name=callback.from_user.full_name), 
-        reply_markup=await main_menu_kb(user_id=user_id)
-    )
+    text, reply_markup = _("Hello, {name}!\nMenu:").format(name=callback.from_user.full_name), await main_menu_kb(user_id=user_id)
+    try:
+        answer = await callback.message.edit_text(text=text, reply_markup=reply_markup)
+    except TelegramBadRequest:
+        await callback.message.delete()
+        await delete_menu_message(callback.message, state, bot)
+        answer = await callback.message.answer(text=text, reply_markup=reply_markup)
+    await state.update_data(menu_message_id=answer.message_id)
 
 async def show_profile(user_id: int, context: Union[Message, CallbackQuery]):
     _ = await get_user_translator(user_id, context)
@@ -166,4 +171,4 @@ async def handle_start_command(user_id: int, context: Union[Message, CallbackQue
     if not await get_user_lang(user_id):
         await show_language_selection(context)
         return
-    await show_main_menu(user_id, context, state, bot) 
+    await show_main_menu(user_id, context, state, bot)
