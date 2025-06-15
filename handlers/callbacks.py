@@ -32,8 +32,8 @@ async def home(callback: CallbackQuery, state: FSMContext, bot: Bot):
     await show_main_menu(callback.from_user.id, callback, state, bot)
 
 @start_callback_router.callback_query(F.data == 'back_home')
-async def back_home(callback: CallbackQuery, state: FSMContext):
-    await show_main_menu_edit(callback.from_user.id, callback, state)
+async def back_home(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    await show_main_menu_edit(callback.from_user.id, callback, state, bot)
 
 @start_callback_router.callback_query(F.data == 'profile')
 async def profile(callback: CallbackQuery):
