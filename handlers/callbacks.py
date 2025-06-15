@@ -131,14 +131,21 @@ async def recipe_choose(callback: CallbackQuery, state: FSMContext):
     if dishes_source:
         source_text = dishes_source.caption or dishes_source.text
         if source_text:
-            dishes = [line.replace('Название блюда:', '').strip() for line in source_text.split('\n')
-                      if line.startswith('Название блюда:')]
+            dish_names = []
+            prefixes = ["Название блюда:", "Dish name:"]
+            for line in source_text.split('\n'):
+                for prefix in prefixes:
+                    if line.startswith(prefix):
+                        dish_name = line.replace(prefix, '').strip()
+                        if dish_name:
+                            dish_names.append(dish_name)
+                        break
         else:
-            dishes = []
+            dish_names = []
     else:
-        dishes = []
+        dish_names = []
     
-    if not dishes:
+    if not dish_names:
         await callback.message.answer(
             text=_("Failed to find dishes. Please try again."),
             reply_markup=await back_home_kb(user_id=user_id)
@@ -146,12 +153,11 @@ async def recipe_choose(callback: CallbackQuery, state: FSMContext):
         return
     
     await state.set_state(UserStates.waiting_for_recipe)
-    await state.update_data(dishes=dishes)
 
     answer = await callback.message.answer_photo(
         photo=photo_file_id,
         caption=_("Which dish would you like a recipe for?"), 
-        reply_markup=await recipe_list_kb(dishes, user_id=user_id),
+        reply_markup=await recipe_list_kb(dish_names, user_id=user_id),
         reply_to_message_id=reply_to_message_id
     )
     
@@ -165,26 +171,28 @@ async def recipe_find(callback: CallbackQuery, state: FSMContext, bot: Bot):
     
     dish_index = int(callback.data.split('_')[1])
     
-    state_data = await state.get_data()
-    dishes = state_data.get('dishes', [])
+    dish_names = []
+    if callback.message.reply_markup and callback.message.reply_markup.inline_keyboard:
+        for row in callback.message.reply_markup.inline_keyboard:
+            for button in row:
+                if button.callback_data and button.callback_data.startswith('recipe_'):
+                    dish_names.append(button.text)
     
-    if dish_index >= len(dishes):
+    dish_names.reverse()
+    
+    if dish_index >= len(dish_names):
         await callback.message.edit_caption(
             caption=_("Failed to find a recipe. Please try again."),
             reply_markup=await back_home_kb(user_id=user_id)
         )
         return
     
-    dish = dishes[dish_index]
+    dish = dish_names[dish_index]
     
     if callback.message.reply_to_message and callback.message.reply_to_message.photo:
         file_bytes, input_file = await get_image_data(callback.message.reply_to_message, bot)
     else:
-        await callback.message.edit_caption(
-            caption=_("Failed to find a recipe. Please try again."),
-            reply_markup=await back_home_kb(user_id=user_id)
-        )
-        return
+        file_bytes, input_file = await get_image_data(callback.message, bot)
 
     await callback.message.edit_caption(caption=_("Searching for a recipe..."), reply_markup=None)
     
