@@ -107,22 +107,52 @@ async def nutrition_plan(callback: CallbackQuery, state: FSMContext):
     await show_nutrition_plan(callback.from_user.id, callback, state)
 
 @start_callback_router.callback_query(F.data == 'find_recipe')
-async def recipe_choose(callback: CallbackQuery, state: FSMContext, bot: Bot):
+async def recipe_choose(callback: CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
     _ = await get_user_translator(user_id, callback)
     await callback.answer()
-    file_bytes, input_file = await get_image_data(callback.message, bot)
 
-    dishes = [line.replace('Название блюда:', '').strip() for line in callback.message.caption.split('\n')
-              if line.startswith('Название блюда:')]
+    if callback.message.photo:
+        dishes_source = callback.message
+        photo_file_id = callback.message.photo[-1].file_id
+        reply_to_message_id = None
+    else:
+        if callback.message.reply_to_message and callback.message.reply_to_message.photo:
+            dishes_source = callback.message
+            photo_file_id = callback.message.reply_to_message.photo[-1].file_id
+            reply_to_message_id = callback.message.reply_to_message.message_id
+        else:
+            await callback.message.answer(
+                text=_("Failed to find image. Please try again."),
+                reply_markup=await back_home_kb(user_id=user_id)
+            )
+            return
+
+    if dishes_source:
+        source_text = dishes_source.caption or dishes_source.text
+        if source_text:
+            dishes = [line.replace('Название блюда:', '').strip() for line in source_text.split('\n')
+                      if line.startswith('Название блюда:')]
+        else:
+            dishes = []
+    else:
+        dishes = []
+    
+    if not dishes:
+        await callback.message.answer(
+            text=_("Failed to find dishes. Please try again."),
+            reply_markup=await back_home_kb(user_id=user_id)
+        )
+        return
     
     await state.set_state(UserStates.waiting_for_recipe)
-    await state.update_data(file_bytes=file_bytes, dishes=dishes)
+    await state.update_data(dishes=dishes)
 
     answer = await callback.message.answer_photo(
-        photo=input_file, 
+        photo=photo_file_id,
         caption=_("Which dish would you like a recipe for?"), 
-        reply_markup=await recipe_list_kb(dishes, user_id=user_id)
+        reply_markup=await recipe_list_kb(dishes, user_id=user_id),
+        reply_to_message_id=reply_to_message_id
     )
     
     await state.update_data(original_message_id=answer.message_id)
@@ -147,7 +177,14 @@ async def recipe_find(callback: CallbackQuery, state: FSMContext, bot: Bot):
     
     dish = dishes[dish_index]
     
-    file_bytes, input_file = await get_image_data(callback.message, bot)
+    if callback.message.reply_to_message and callback.message.reply_to_message.photo:
+        file_bytes, input_file = await get_image_data(callback.message.reply_to_message, bot)
+    else:
+        await callback.message.edit_caption(
+            caption=_("Failed to find a recipe. Please try again."),
+            reply_markup=await back_home_kb(user_id=user_id)
+        )
+        return
 
     await callback.message.edit_caption(caption=_("Searching for a recipe..."), reply_markup=None)
     
