@@ -6,8 +6,6 @@ from handlers.commands import start_cmd_router
 from db_handler import database
 from utils.locales import LanguageSelectionRequired
 from aiogram.types import ErrorEvent
-from aiogram import F
-
 
 async def main():
     await database.init_db()
