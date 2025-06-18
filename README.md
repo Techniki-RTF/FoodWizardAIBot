@@ -15,3 +15,5 @@
 pip install -r requirements.txt
 python aiogram_run.py
 ```
+<br>
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/ZfDJXS?referralCode=AMG_G2)
